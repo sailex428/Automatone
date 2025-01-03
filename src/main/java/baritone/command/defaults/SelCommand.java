@@ -256,7 +256,6 @@ public class SelCommand extends Command {
 
     public void renderSelectionBox() {
         Settings settings = BaritoneAPI.getGlobalSettings();
-        BetterBlockPos pos1 = this.pos1;
         if (!settings.renderSelectionCorners.get() || pos1 == null) {
             return;
         }

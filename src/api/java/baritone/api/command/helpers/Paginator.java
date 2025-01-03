@@ -65,10 +65,9 @@ public class Paginator<E> {
         int offset = (page - 1) * pageSize;
         for (int i = offset; i < offset + pageSize; i++) {
             if (i < entries.size()) {
-                E entry = entries.get(i);
-                source.sendFeedback(() -> transform.apply(entry), false);
+                source.sendFeedback(transform.apply(entries.get(i)), false);
             } else {
-                source.sendFeedback(() -> Text.literal("--").formatted(Formatting.DARK_GRAY), false);
+                source.sendFeedback(Text.literal("--").formatted(Formatting.DARK_GRAY), false);
             }
         }
         boolean hasPrevPage = commandPrefix != null && validPage(page - 1);
@@ -101,15 +100,13 @@ public class Paginator<E> {
         } else {
             nextPageComponent.setStyle(nextPageComponent.getStyle().withFormatting(Formatting.DARK_GRAY));
         }
-        source.sendFeedback(() -> {
-            MutableText pagerComponent = Text.literal("");
-            pagerComponent.setStyle(pagerComponent.getStyle().withFormatting(Formatting.GRAY));
-            pagerComponent.append(prevPageComponent);
-            pagerComponent.append(" | ");
-            pagerComponent.append(nextPageComponent);
-            pagerComponent.append(String.format(" %d/%d", page, getMaxPage()));
-            return pagerComponent;
-        }, false);
+        MutableText pagerComponent = Text.literal("");
+        pagerComponent.setStyle(pagerComponent.getStyle().withFormatting(Formatting.GRAY));
+        pagerComponent.append(prevPageComponent);
+        pagerComponent.append(" | ");
+        pagerComponent.append(nextPageComponent);
+        pagerComponent.append(String.format(" %d/%d", page, getMaxPage()));
+        source.sendFeedback(pagerComponent, false);
     }
 
     public static <T> void paginate(IArgConsumer consumer, Paginator<T> pagi, Runnable pre, Function<T, Text> transform, String commandPrefix) throws CommandException {

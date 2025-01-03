@@ -263,7 +263,7 @@ public interface MovementHelper extends ActionCosts {
         if (block == Blocks.LARGE_FERN || block == Blocks.TALL_GRASS) {
             return true;
         }
-        return state.materialReplaceable();
+        return state.getMaterial().isReplaceable();
     }
 
     @Deprecated

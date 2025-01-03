@@ -22,6 +22,7 @@ import io.github.ladysnake.elmendorf.ElmendorfTestContext;
 import io.github.ladysnake.elmendorf.GameTestUtil;
 import io.github.ladysnake.elmendorf.impl.MockClientConnection;
 import io.github.ladysnake.otomaton.mixin.ServerWorldAccessor;
+import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
@@ -43,11 +44,10 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import org.quiltmc.qsl.testing.api.game.QuiltGameTest;
 
 import java.util.List;
 
-public class OtomatonTestSuite implements QuiltGameTest {
+public class OtomatonTestSuite implements FabricGameTest {
     @BeforeBatch(batchId = "sleepingBatch")
     public void beforeSleepingTests(ServerWorld world) {
         world.setTimeOfDay(20000);
@@ -65,18 +65,18 @@ public class OtomatonTestSuite implements QuiltGameTest {
         BlockPos bedPos = new BlockPos(1, 0, 2);
         fakePlayer.interactionManager.interactBlock(
                 fakePlayer,
-                fakePlayer.getWorld(),
+                fakePlayer.world,
                 bed,
                 Hand.MAIN_HAND,
                 new BlockHitResult(new Vec3d(0.5, 0.5, 0.5), Direction.UP, ctx.getAbsolutePos(bedPos), false)
         );
         ctx.expectBlock(Blocks.RED_BED, bedPos);
         player.interactionManager.interactBlock(
-                player, player.getWorld(), ItemStack.EMPTY, Hand.OFF_HAND,
+                player, player.world, ItemStack.EMPTY, Hand.OFF_HAND,
                 new BlockHitResult(new Vec3d(0.5, 0.5, 0.5), Direction.UP, ctx.getAbsolutePos(bedPos), false)
         );
         List<ServerPlayerEntity> players = List.of(fakePlayer, player);
-        SleepManager sleepManager = ((ServerWorldAccessor) player.getWorld()).requiem$getSleepManager();
+        SleepManager sleepManager = ((ServerWorldAccessor) player.world).requiem$getSleepManager();
         sleepManager.update(players);
         GameTestUtil.assertTrue("player should be sleeping", player.isSleeping());
         GameTestUtil.assertTrue("all players should be sleeping", sleepManager.canResetTime(100, players));

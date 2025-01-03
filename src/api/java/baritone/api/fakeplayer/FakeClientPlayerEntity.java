@@ -95,12 +95,12 @@ public class FakeClientPlayerEntity extends OtherClientPlayerEntity implements A
     @Override
     public void playSound(SoundEvent sound, float volume, float pitch) {
         if (!this.isSilent()) {
-            this.getWorld().playSound(this.getX(), this.getY(), this.getZ(), sound, this.getSoundCategory(), volume, pitch, false);
+            this.world.playSound(this.getX(), this.getY(), this.getZ(), sound, this.getSoundCategory(), volume, pitch, false);
         }
     }
 
     @Override
     public void playSound(SoundEvent event, SoundCategory category, float volume, float pitch) {
-        this.getWorld().playSound(this.getX(), this.getY(), this.getZ(), event, category, volume, pitch, false);
+        this.world.playSound(this.getX(), this.getY(), this.getZ(), event, category, volume, pitch, false);
     }
 }

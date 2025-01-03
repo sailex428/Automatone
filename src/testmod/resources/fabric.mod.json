@@ -22,7 +22,7 @@
     "client_init": [
       "io.github.ladysnake.otomaton.OtomatonClient"
     ],
-    "quilt:game_test": [
+    "fabric-gametest": [
       "io.github.ladysnake.otomaton.OtomatonTestSuite"
     ]
   },

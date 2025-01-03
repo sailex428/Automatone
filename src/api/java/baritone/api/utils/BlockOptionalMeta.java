@@ -26,7 +26,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootTables;
 import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.context.LootContextParameterSet;
 import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.server.world.ServerWorld;
@@ -143,15 +142,14 @@ public final class BlockOptionalMeta {
             } else {
                 List<Item> items = new ArrayList<>();
 
-                world.getServer().getLootManager().getLootTable(lootTableLocation).generateLoot(
-                    new LootContext.Builder(new LootContextParameterSet.Builder(world)
-                            .add(LootContextParameters.ORIGIN, Vec3d.of(BlockPos.ZERO))
-                            .add(LootContextParameters.TOOL, ItemStack.EMPTY)
-                            .addOptional(LootContextParameters.BLOCK_ENTITY, null)
-                            .add(LootContextParameters.BLOCK_STATE, block.getDefaultState())
-                            .build(LootContextTypes.BLOCK))
-                        .withRandomSeed(world.getSeed())
-                        .build(null),
+                world.getServer().getLootManager().getTable(lootTableLocation).generateLoot(
+                    new LootContext.Builder(world)
+                        .random(world.random)
+                        .parameter(LootContextParameters.ORIGIN, Vec3d.of(BlockPos.ZERO))
+                        .parameter(LootContextParameters.TOOL, ItemStack.EMPTY)
+                        .optionalParameter(LootContextParameters.BLOCK_ENTITY, null)
+                        .parameter(LootContextParameters.BLOCK_STATE, block.getDefaultState())
+                        .build(LootContextTypes.BLOCK),
                     stack -> items.add(stack.getItem())
                 );
                 return items;
