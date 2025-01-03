@@ -15,26 +15,17 @@
  * along with Baritone.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-import baritone.gradle.task.CreateDistTask
-import baritone.gradle.task.DeterminizingTask
-import baritone.gradle.task.ProguardTask
 import net.fabricmc.loom.task.RemapJarTask
 
-import java.util.stream.Collectors
-
 plugins {
-    id 'fabric-loom' version '0.10-SNAPSHOT'
-    id 'com.jfrog.artifactory' version '4.21.0'
-    id 'org.ajoberstar.grgit' version '3.1.1'
-    id 'com.github.breadmoirai.github-release' version '2.2.12'
-    id 'maven-publish'
+    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'com.jfrog.artifactory' version '5.2.5'
+    id 'org.ajoberstar.grgit' version '5.0.0-rc.3'
 }
 
 group project.maven_group
 version project.mod_version
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_16
 compileJava {
     sourceCompatibility = targetCompatibility = JavaVersion.VERSION_16
     options.encoding = "UTF-8" // allow emoji in comments :^)
@@ -108,7 +99,7 @@ repositories {
 
     maven {
         name = "Ladysnake Mods"
-        url = 'https://ladysnake.jfrog.io/artifactory/mods'
+        url = 'https://maven.ladysnake.org/releases/'
         content {
             includeGroup 'io.github.ladysnake'
             includeGroupByRegex 'io\\.github\\.onyxstudios.*'
@@ -120,7 +111,6 @@ repositories {
             includeGroup 'com.jamieswhiteshirt'
         }
     }
-    mavenLocal()
 }
 
 dependencies {
@@ -139,7 +129,7 @@ dependencies {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier 'sources'
+    archiveClassifier.set("sources")
     from sourceSets.api.allSource
 }
 
@@ -174,10 +164,6 @@ javadoc {
 
 // skidded from fabric-example-mod (comments and all)
 tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
 
     // Minecraft 1.17 (21w19a) upwards uses Java 16.
@@ -201,41 +187,5 @@ jar {
 }
 
 remapJar.configure {
-    it.classifier = 'remapped'
+    it.archiveClassifier.set("remapped")
 }
-
-// skidded from ProguardTask
-task determinizeBuiltJar(type: DeterminizingTask) {
-    input.set(remapJar.archiveFile)
-    archiveClassifier.set('unoptimized')
-}
-
-task proguard(type: ProguardTask, dependsOn: determinizeBuiltJar) {
-    input.set(determinizeBuiltJar.archiveFile)
-    archiveClassifier.set('optimized')
-    url 'https://github.com/Guardsquare/proguard/releases/download/v7.1.0-beta1/proguard-7.1.0-beta1.zip'
-    extract 'proguard-7.1.0-beta1/lib/proguard.jar'
-    afterEvaluate {
-        def mappedMods = project.configurations.modCompileClasspathMapped.resolvedConfiguration.files
-        classpath project.files(loom.minecraftMappedProvider.intermediaryJar)
-        classpath project.files(project.configurations.modCompileClasspath.resolvedConfiguration.resolvedArtifacts
-                .stream()
-                .map{it.file}
-                .collect(Collectors.toList())
-        )
-        classpath project.files(sourceSets.launch.runtimeClasspath.files.stream()
-                .filter { it.isFile() }
-                // remove remapped jars, the intermediary versions are included above
-                .filter{!loom.minecraftMappedProvider.mappedJar.equals(it) && !mappedMods.contains(it) }
-                .collect(Collectors.toList())
-        )
-    }
-}
-
-task createDist(type: CreateDistTask, dependsOn: proguard) {
-    input proguard.archiveFile
-}
-
-build.finalizedBy(createDist)
-
-apply from: 'release.gradle'
