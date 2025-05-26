@@ -18,11 +18,11 @@
 package baritone.utils;
 
 import baritone.Baritone;
-import baritone.api.utils.ICommandHelper;
 import baritone.api.utils.IInputOverrideHandler;
-import baritone.api.utils.MoveDirection;
 import baritone.api.utils.input.Input;
 import baritone.behavior.Behavior;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -44,14 +44,12 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
 
     private final BlockBreakHelper blockBreakHelper;
     private final BlockPlaceHelper blockPlaceHelper;
-    private final ICommandHelper commandHelper;
     private boolean needsUpdate;
 
     public InputOverrideHandler(Baritone baritone) {
         super(baritone);
         this.blockBreakHelper = new BlockBreakHelper(baritone.getPlayerContext());
         this.blockPlaceHelper = new BlockPlaceHelper(baritone.getPlayerContext());
-        this.commandHelper = baritone.getCommandHelper();
     }
 
     /**
@@ -101,43 +99,54 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
             setInputForceState(Input.CLICK_RIGHT, false);
         }
 
-//        LivingEntity entity = this.ctx.entity();
-//        entity.sidewaysSpeed = 0.0F;
-//        entity.forwardSpeed = 0.0F;
-//        entity.setSneaking(false);
-        commandHelper.executeMoveStop();
-        commandHelper.executeUnSneak();
+        ServerPlayerEntity entity = this.ctx.entity();
 
-        //entity.setJumping(this.isInputForcedDown(Input.JUMP)); // oppa gangnam style
-        if (this.isInputForcedDown(Input.JUMP)) {
-            commandHelper.executeJump();
+        Vec3d currentVelocity = entity.getVelocity();
+        entity.setSneaking(false);
+
+        float vel;
+        float forward = 0.0F;
+        float strafing = 0.0F;
+
+        if (this.isInputForcedDown(Input.SNEAK)) {
+            entity.setSneaking(true);
+            vel = 0.3F;
+        } else {
+            vel = 1.0F;
         }
 
         if (this.isInputForcedDown(Input.MOVE_FORWARD)) {
-            //entity.forwardSpeed++;
-            commandHelper.executeMove(MoveDirection.FORWARD);
+            forward++;
         }
-
         if (this.isInputForcedDown(Input.MOVE_BACK)) {
-            //entity.forwardSpeed--;
-            commandHelper.executeMove(MoveDirection.BACKWARD);
+            forward--;
         }
-
         if (this.isInputForcedDown(Input.MOVE_LEFT)) {
-            //entity.sidewaysSpeed++;
-            commandHelper.executeMove(MoveDirection.LEFT);
+            strafing++;
         }
-
         if (this.isInputForcedDown(Input.MOVE_RIGHT)) {
-            //entity.sidewaysSpeed--;
-            commandHelper.executeMove(MoveDirection.RIGHT);
+            strafing--;
         }
 
-        if (this.isInputForcedDown(Input.SNEAK)) {
-//            entity.setSneaking(true);
-//            entity.sidewaysSpeed *= 0.3D;
-//            entity.forwardSpeed *= 0.3D;
-            commandHelper.executeSneak();
+        if (forward != 0.0F || strafing != 0.0F) {
+            float yaw = entity.getYaw();
+            double yawRad = Math.toRadians(yaw);
+
+            double sin = Math.sin(yawRad);
+            double cos = Math.cos(yawRad);
+
+            double speed = vel * 0.3;
+            double motionX = (strafing * cos - forward * sin) * speed;
+            double motionZ = (forward * cos + strafing * sin) * speed;
+
+            entity.setVelocity(motionX, currentVelocity.y, motionZ);
+            entity.velocityModified = true;
+        } else {
+            entity.setVelocity(0, currentVelocity.y, 0);
+        }
+
+        if (this.isInputForcedDown(Input.JUMP) && entity.isOnGround()) {
+            entity.jump();
         }
 
         blockBreakHelper.tick(isInputForcedDown(Input.CLICK_LEFT));

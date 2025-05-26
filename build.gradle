@@ -97,7 +97,6 @@ dependencies {
     modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-world:${cca_version}") {
         transitive = false
     }
-    modImplementation("com.github.gnembon:fabric-carpet:${carpet_version}")
     compileOnly "com.demonwav.mcdev:annotations:1.0"
 
     testImplementation 'junit:junit:4.12'

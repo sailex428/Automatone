@@ -23,7 +23,6 @@ import baritone.api.Settings;
 import baritone.api.cache.IWorldProvider;
 import baritone.api.event.listener.IEventBus;
 import baritone.api.process.IBaritoneProcess;
-import baritone.api.utils.ICommandHelper;
 import baritone.api.utils.IEntityContext;
 import baritone.behavior.Behavior;
 import baritone.behavior.InventoryBehavior;
@@ -34,21 +33,12 @@ import baritone.cache.WorldProvider;
 import baritone.command.defaults.DefaultCommands;
 import baritone.command.manager.BaritoneCommandManager;
 import baritone.event.GameEventHandler;
-import baritone.process.BackfillProcess;
-import baritone.process.BuilderProcess;
-import baritone.process.CustomGoalProcess;
-import baritone.process.ExploreProcess;
-import baritone.process.FarmProcess;
-import baritone.process.FollowProcess;
-import baritone.process.GetToBlockProcess;
-import baritone.process.MineProcess;
+import baritone.process.*;
 import baritone.render.ClientPathingBehaviour;
 import baritone.utils.BlockStateInterface;
-import baritone.utils.CarpetPlayerCommandHelper;
 import baritone.utils.InputOverrideHandler;
 import baritone.utils.PathingControlManager;
 import baritone.utils.player.EntityContext;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
@@ -89,10 +79,7 @@ public class Baritone implements IBaritone {
 
     public BlockStateInterface bsi;
 
-    private final CarpetPlayerCommandHelper commandHelper;
-
     public Baritone(ServerPlayerEntity player) {
-        this.commandHelper = new CarpetPlayerCommandHelper(this, player);
         this.settings = new Settings();
         this.gameEventHandler = new GameEventHandler(this);
 
@@ -263,10 +250,5 @@ public class Baritone implements IBaritone {
     @Override
     public void serverTick() {
         this.getGameEventHandler().onTickServer();
-    }
-
-    @Override
-    public ICommandHelper getCommandHelper() {
-        return this.commandHelper;
     }
 }

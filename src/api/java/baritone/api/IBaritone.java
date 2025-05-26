@@ -24,7 +24,6 @@ import baritone.api.command.manager.ICommandManager;
 import baritone.api.event.listener.IEventBus;
 import baritone.api.pathing.calc.IPathingControlManager;
 import baritone.api.process.*;
-import baritone.api.utils.ICommandHelper;
 import baritone.api.utils.IEntityContext;
 import baritone.api.utils.IInputOverrideHandler;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -194,6 +193,4 @@ public interface IBaritone extends ServerTickingComponent {
     boolean isActive();
 
     Settings settings();
-
-    ICommandHelper getCommandHelper();
 }
