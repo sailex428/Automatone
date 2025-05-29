@@ -20,12 +20,10 @@ package baritone.api;
 import baritone.api.utils.SettingsUtil;
 import baritone.api.utils.TypeUtils;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3i;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,12 +31,8 @@ import java.awt.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -193,42 +187,48 @@ public final class Settings {
     /**
      * Blocks that Baritone is allowed to place (as throwaway, for sneak bridging, pillaring, etc.)
      */
-    public final Setting<TagKey<Item>> acceptableThrowawayItems = new Setting<>(TagKey.of(
-            RegistryKeys.ITEM,
-            Identifier.of("automatone", "throwaway_blocks")
-    ));
+    public final Setting<List<Item>> acceptableThrowawayItems = new Setting<>(new ArrayList<>(Arrays.asList(
+            Blocks.DIRT.asItem(),
+            Blocks.COBBLESTONE.asItem(),
+            Blocks.NETHERRACK.asItem(),
+            Blocks.STONE.asItem()
+    )));
 
     /**
      * Blocks that Baritone will attempt to avoid (Used in avoidance)
      */
-    public final Setting<TagKey<Block>> blocksToAvoid = new Setting<>(TagKey.of(RegistryKeys.BLOCK,
-            Identifier.of("automatone", "avoided_blocks")
+    public final Setting<List<Block>> blocksToAvoid = new Setting<>(new ArrayList<>(
+            // Leave Empty by Default
     ));
 
+
     /**
-     * Blocks that Baritone is not allowed to break
+     * blocks that baritone shouldn't break, but can if it needs to.
      */
-    public final Setting<TagKey<Block>> blocksToAvoidBreaking = new Setting<>(TagKey.of(RegistryKeys.BLOCK,
-            Identifier.of("automatone", "no_break")
-    ));
+    public final Setting<List<Block>> blocksToAvoidBreaking = new Setting<>(new ArrayList<>(Arrays.asList( // TODO can this be a HashSet or ImmutableSet?
+            Blocks.CRAFTING_TABLE,
+            Blocks.FURNACE,
+            Blocks.CHEST,
+            Blocks.TRAPPED_CHEST
+    )));
 
     /**
      * A list of blocks to be treated as if they're air.
      * <p>
      * If a schematic asks for air at a certain position, and that position currently contains a block on this list, it will be treated as correct.
      */
-    public final Setting<TagKey<Block>> buildIgnoreBlocks = new Setting<>(TagKey.of(RegistryKeys.BLOCK,
-            Identifier.of("automatone", "build/ignored_blocks")
-    ));
+    public final Setting<List<Block>> buildIgnoreBlocks = new Setting<>(new ArrayList<>(Arrays.asList(
+
+    )));
 
     /**
      * A list of blocks to become air
      * <p>
      * If a schematic asks for a block on this list, only air will be accepted at that location (and nothing on buildIgnoreBlocks)
      */
-    public final Setting<TagKey<Block>> okIfAir = new Setting<>(TagKey.of(RegistryKeys.BLOCK,
-        Identifier.of("automatone", "build/ok_if_air")
-    ));
+    public final Setting<List<Block>> okIfAir = new Setting<>(new ArrayList<>(Arrays.asList(
+
+    )));
 
     /**
      * If this is true, the builder will treat all non-air blocks as correct. It will only place new blocks.

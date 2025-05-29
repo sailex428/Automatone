@@ -1048,10 +1048,10 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
         if (current.isAir() && desired.isAir()) {
             return true;
         }
-        if (current.isAir() && desired.isIn(baritone.settings().okIfAir.get())) {
+        if (current.isAir() && baritone.settings().okIfAir.get().contains(desired.getBlock())) {
             return true;
         }
-        if (desired.isAir() && current.isIn(baritone.settings().buildIgnoreBlocks.get())) {
+        if (desired.isAir() && baritone.settings().buildIgnoreBlocks.get().contains(current.getBlock())) {
             return true;
         }
         if (!current.isAir() && baritone.settings().buildIgnoreExisting.get() && !itemVerify) {

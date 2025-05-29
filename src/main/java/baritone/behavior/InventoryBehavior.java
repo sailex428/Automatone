@@ -117,7 +117,7 @@ public final class InventoryBehavior extends Behavior {
         DefaultedList<ItemStack> invy = inventory.main;
         for (int i = 0; i < invy.size(); i++) {
             Item item = invy.get(i).getItem();
-            if (invy.get(i).isIn(baritone.settings().acceptableThrowawayItems.get())) {
+            if (baritone.settings().acceptableThrowawayItems.get().contains(item)) {
                 if (!AltoClefSettings.getInstance().isItemProtected(item)) {
                     return i;
                 }
@@ -152,7 +152,7 @@ public final class InventoryBehavior extends Behavior {
     public boolean hasGenericThrowaway() {
         return throwaway(false,
                 stack -> !AltoClefSettings.getInstance().isItemProtected(stack.getItem())
-                        && stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
+                        && baritone.settings().acceptableThrowawayItems.get().contains(stack.getItem()));
     }
 
     public boolean selectThrowawayForLocation(boolean select, int x, int y, int z) {
@@ -169,7 +169,7 @@ public final class InventoryBehavior extends Behavior {
         }
         return throwaway(select,
                 stack -> !AltoClefSettings.getInstance().isItemProtected(stack.getItem())
-                        && stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
+                        && baritone.settings().acceptableThrowawayItems.get().contains(stack.getItem()));
     }
 
     public boolean throwaway(boolean select, Predicate<? super ItemStack> desired) {

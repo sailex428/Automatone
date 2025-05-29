@@ -127,7 +127,7 @@ public interface MovementHelper extends ActionCosts {
                 || block == Blocks.END_ROD) {
             return false;
         }
-        if (state.isIn(settings.blocksToAvoid.get())) {
+        if (settings.blocksToAvoid.get().contains(state.getBlock())) {
             return false;
         }
         if (block instanceof DoorBlock || block instanceof FenceGateBlock) {
