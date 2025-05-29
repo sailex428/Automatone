@@ -18,6 +18,7 @@
 package baritone.behavior;
 
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.utils.ToolSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -51,7 +52,7 @@ public final class InventoryBehavior extends Behavior {
 
     @Override
     public void onTickServer() {
-        if (!baritone.settings().allowInventory.get()) {
+        if (!baritone.settings().allowInventory.get() || AltoClefSettings.getInstance().isInteractionPaused()) {
             return;
         }
         if (!(ctx.entity() instanceof PlayerEntity player)) {
@@ -71,6 +72,7 @@ public final class InventoryBehavior extends Behavior {
     }
 
     public void attemptToPutOnHotbar(int inMainInvy, Predicate<Integer> disallowedHotbar, PlayerInventory inventory) {
+        if (AltoClefSettings.getInstance().isInteractionPaused()) return;
         OptionalInt destination = getTempHotbarSlot(disallowedHotbar);
         if (destination.isPresent()) {
             swapWithHotBar(inMainInvy, destination.getAsInt(), inventory);
@@ -105,6 +107,7 @@ public final class InventoryBehavior extends Behavior {
     }
 
     private void swapWithHotBar(int inInventory, int inHotbar, PlayerInventory inventory) {
+        if (AltoClefSettings.getInstance().isInteractionPaused()) return;
         ItemStack h = inventory.getStack(inHotbar);
         inventory.setStack(inHotbar, inventory.getStack(inInventory));
         inventory.setStack(inInventory, h);
@@ -113,8 +116,11 @@ public final class InventoryBehavior extends Behavior {
     private int firstValidThrowaway(PlayerInventory inventory) { // TODO offhand idk
         DefaultedList<ItemStack> invy = inventory.main;
         for (int i = 0; i < invy.size(); i++) {
+            Item item = invy.get(i).getItem();
             if (invy.get(i).isIn(baritone.settings().acceptableThrowawayItems.get())) {
-                return i;
+                if (!AltoClefSettings.getInstance().isItemProtected(item)) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -145,11 +151,14 @@ public final class InventoryBehavior extends Behavior {
 
     public boolean hasGenericThrowaway() {
         return throwaway(false,
-                stack -> stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
+                stack -> !AltoClefSettings.getInstance().isItemProtected(stack.getItem())
+                        && stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
     }
 
     public boolean selectThrowawayForLocation(boolean select, int x, int y, int z) {
         if (!(ctx.entity() instanceof PlayerEntity player)) return false;
+        if (AltoClefSettings.getInstance().isInteractionPaused()) return false;
+        if (AltoClefSettings.getInstance().shouldAvoidPlacingAt(x, y, z)) return false;
 
         BlockState maybe = baritone.getBuilderProcess().placeAt(x, y, z, baritone.bsi.get0(x, y, z));
         if (maybe != null && throwaway(select, stack -> stack.getItem() instanceof BlockItem && maybe.equals(((BlockItem) stack.getItem()).getBlock().getPlacementState(new ItemPlacementContext(new ItemUsageContext(ctx.world(), player, Hand.MAIN_HAND, stack, new BlockHitResult(new Vec3d(player.getX(), player.getY(), player.getZ()), Direction.UP, ctx.feetPos(), false)) {}))))) {
@@ -159,11 +168,13 @@ public final class InventoryBehavior extends Behavior {
             return true;
         }
         return throwaway(select,
-                stack -> stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
+                stack -> !AltoClefSettings.getInstance().isItemProtected(stack.getItem())
+                        && stack.isIn(baritone.settings().acceptableThrowawayItems.get()));
     }
 
     public boolean throwaway(boolean select, Predicate<? super ItemStack> desired) {
         if (!(ctx.entity() instanceof PlayerEntity p)) return false;
+        if (AltoClefSettings.getInstance().isInteractionPaused()) return false;
 
         DefaultedList<ItemStack> inv = p.getInventory().main;
         for (int i = 0; i < 9; i++) {

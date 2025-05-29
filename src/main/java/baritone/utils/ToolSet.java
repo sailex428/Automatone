@@ -17,6 +17,7 @@
 
 package baritone.utils;
 
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.IBaritone;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -198,7 +199,9 @@ public class ToolSet {
                 speed += effLevel * effLevel + 1;
             }
         }
-
+        if (AltoClefSettings.getInstance().shouldForceUseTool(state, item)) {
+            return Double.POSITIVE_INFINITY;
+        }
         speed /= hardness;
         if (!state.isToolRequired() || (!item.isEmpty() && item.isSuitableFor(state))) {
             return speed / 30;

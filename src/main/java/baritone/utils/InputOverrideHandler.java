@@ -18,6 +18,7 @@
 package baritone.utils;
 
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.utils.IInputOverrideHandler;
 import baritone.api.utils.input.Input;
 import baritone.behavior.Behavior;
@@ -147,6 +148,11 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
 
         if (this.isInputForcedDown(Input.JUMP) && entity.isOnGround()) {
             entity.jump();
+        }
+
+        if (AltoClefSettings.getInstance().isInteractionPaused()) {
+            setInputForceState(Input.CLICK_LEFT, false);
+            setInputForceState(Input.CLICK_RIGHT, false);
         }
 
         blockBreakHelper.tick(isInputForcedDown(Input.CLICK_LEFT));

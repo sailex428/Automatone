@@ -17,6 +17,7 @@
 
 package baritone.pathing.calc;
 
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.movement.ActionCosts;
 import baritone.api.utils.BetterBlockPos;
@@ -78,10 +79,11 @@ public final class PathNode {
         this.previous = null;
         this.cost = ActionCosts.COST_INF;
         this.oxygenCost = 0;
-        this.estimatedCostToGoal = goal.heuristic(x, y, z);
-        if (Double.isNaN(estimatedCostToGoal)) {
+        double originalCost = goal.heuristic(x, y, z);
+        if (Double.isNaN(originalCost)) {
             throw new IllegalStateException(goal + " calculated implausible heuristic");
         }
+        this.estimatedCostToGoal = AltoClefSettings.getInstance().applyGlobalHeuristic(originalCost, x, y, z);
         this.heapPosition = -1;
         this.x = x;
         this.y = y;

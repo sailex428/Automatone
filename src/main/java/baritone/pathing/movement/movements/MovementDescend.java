@@ -17,6 +17,7 @@
 
 package baritone.pathing.movement.movements;
 
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.IBaritone;
 import baritone.api.Settings;
 import baritone.api.pathing.movement.MovementStatus;
@@ -31,7 +32,6 @@ import baritone.pathing.movement.MovementState;
 import baritone.utils.BlockStateInterface;
 import baritone.utils.pathing.MutableMoveResult;
 import com.google.common.collect.ImmutableSet;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FallingBlock;
@@ -309,9 +309,13 @@ public class MovementDescend extends Movement {
             return true;
         }
         for (int y = 0; y <= 2; y++) { // we could hit any of the three blocks
-            BlockState state = BlockStateInterface.get(ctx, into.up(y));
+            BlockPos p = into.up(y);
+            BlockState state = BlockStateInterface.get(ctx, p);
             if (MovementHelper.avoidWalkingInto(state)
                     && !(MovementHelper.isWater(state) && baritone.settings().allowSwimming.get())) {
+                return true;
+            }
+            if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(p)) {
                 return true;
             }
         }

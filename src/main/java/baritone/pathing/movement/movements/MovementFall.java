@@ -18,6 +18,7 @@
 package baritone.pathing.movement.movements;
 
 import baritone.Automatone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.IBaritone;
 import baritone.api.Settings;
 import baritone.api.pathing.movement.MovementStatus;
@@ -106,7 +107,9 @@ public class MovementFall extends Movement {
         Rotation targetRotation = null;
         BlockState destState = ctx.world().getBlockState(dest);
         boolean isWater = destState.getFluidState().getFluid() instanceof WaterFluid;
-        if (!isWater && willPlaceBucket() && !playerFeet.equals(dest)) {
+
+        if (!isWater && willPlaceBucket() && !playerFeet.equals(dest) &&
+                !AltoClefSettings.getInstance().shouldNotPlaceBucketButStillFall()) {
             PlayerInventory inventory = ctx.inventory();
             if (inventory == null || !PlayerInventory.isValidHotbarIndex(InventoryBehavior.getSlotWithStack(inventory, Automatone.WATER_BUCKETS)) || ctx.world().getDimension().ultrawarm()) {
                 return state.setStatus(MovementStatus.UNREACHABLE);

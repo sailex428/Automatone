@@ -19,6 +19,7 @@ package baritone.pathing.path;
 
 import baritone.Automatone;
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.Settings;
 import baritone.api.pathing.calc.IPath;
 import baritone.api.pathing.movement.ActionCosts;
@@ -37,7 +38,6 @@ import baritone.pathing.movement.Movement;
 import baritone.pathing.movement.MovementHelper;
 import baritone.pathing.movement.movements.*;
 import baritone.utils.BlockStateInterface;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -541,6 +541,10 @@ public class PathExecutor implements IPathExecutor {
             }
         }
         if (MovementHelper.avoidWalkingInto(ctx.world().getBlockState(current.getSrc().up(3)))) {
+            return false;
+        }
+        if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(current.getSrc().up(3)) ||
+                AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(current.getSrc().up(2))) {
             return false;
         }
         return !MovementHelper.avoidWalkingInto(ctx.world().getBlockState(next.getDest().up(2))); // codacy smh my head

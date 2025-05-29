@@ -33,6 +33,8 @@ public final class RayTraceUtils {
 
     private RayTraceUtils() {}
 
+    public static RaycastContext.FluidHandling fluidHandling = RaycastContext.FluidHandling.NONE;
+
     /**
      * Performs a block raytrace with the specified rotations. This should only be used when
      * any entity collisions can be ignored, because this method will not recognize if an
@@ -60,7 +62,7 @@ public final class RayTraceUtils {
                 direction.y * blockReachDistance,
                 direction.z * blockReachDistance
         );
-        return entity.getWorld().raycast(new RaycastContext(start, end, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, entity));
+        return entity.getWorld().raycast(new RaycastContext(start, end, RaycastContext.ShapeType.OUTLINE, fluidHandling, entity));
     }
 
     public static Vec3d inferSneakingEyePosition(Entity entity) {

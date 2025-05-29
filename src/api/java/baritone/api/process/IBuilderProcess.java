@@ -72,4 +72,8 @@ public interface IBuilderProcess extends IBaritoneProcess {
      * cause it to give up. This is updated every tick, but only while the builder process is active.
      */
     List<BlockState> getApproxPlaceable();
+
+    void popStack();
+
+    boolean isFromAltoclefFinished();
 }

@@ -18,6 +18,7 @@
 package baritone.pathing.movement;
 
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.IBaritone;
 import baritone.api.Settings;
 import baritone.api.pathing.movement.ActionCosts;
@@ -44,7 +45,6 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.WaterFluid;
 import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -65,9 +65,14 @@ import static baritone.pathing.movement.Movement.HORIZONTALS_BUT_ALSO_DOWN_____S
 public interface MovementHelper extends ActionCosts {
 
     static boolean avoidBreaking(BlockStateInterface bsi, int x, int y, int z, BlockState state, Settings settings) {
+        if (bsi.get0(x, y + 1, z).getBlock() instanceof EndPortalFrameBlock) {
+            return true;
+        }
+        if (AltoClefSettings.getInstance().shouldAvoidBreaking(new BlockPos(x, y, z))) return true;
         Block b = state.getBlock();
         return b == Blocks.ICE // ice becomes water, and water can mess up the path
                 || b instanceof InfestedBlock // obvious reasons
+                || b instanceof EndPortalFrameBlock
                 // call context.get directly with x,y,z. no need to make 5 new BlockPos for no reason
                 || avoidAdjacentBreaking(bsi, x, y + 1, z, true, settings)
                 || avoidAdjacentBreaking(bsi, x + 1, y, z, false, settings)
@@ -102,6 +107,13 @@ public interface MovementHelper extends ActionCosts {
 
     static boolean canWalkThrough(BlockStateInterface bsi, int x, int y, int z, BlockState state, Settings settings) {
         Block block = state.getBlock();
+        BlockState up = bsi.get0(x, y + 1, z);
+        if (AltoClefSettings.getInstance().canSwimThroughLava() && block == Blocks.LAVA) {
+            return up.getFluidState().isEmpty();
+        }
+        if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(x, y, z)) {
+            return false;
+        }
         if (block instanceof AirBlock) { // early return for most common case
             return true;
         }
@@ -154,7 +166,6 @@ public interface MovementHelper extends ActionCosts {
             if (settings.assumeWalkOnWater.get()) {
                 return false;
             }
-            BlockState up = bsi.get0(x, y + 1, z);
             if ((!settings.allowSwimming.get() && !up.getFluidState().isEmpty()) || up.getBlock() instanceof LilyPadBlock) {
                 return false;
             }
@@ -189,6 +200,9 @@ public interface MovementHelper extends ActionCosts {
     }
 
     static boolean fullyPassable(BlockView access, BlockPos pos, BlockState state) {
+        if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(pos)) {
+            return false;
+        }
         Block block = state.getBlock();
         if (block instanceof AirBlock) { // early return for most common case
             return true;
@@ -300,6 +314,7 @@ public interface MovementHelper extends ActionCosts {
                 || block == Blocks.MAGMA_BLOCK
                 || block == Blocks.CACTUS
                 || block instanceof AbstractFireBlock
+                || block instanceof EndPortalFrameBlock
                 || block == Blocks.END_PORTAL
                 || block == Blocks.COBWEB
                 || block == Blocks.BUBBLE_COLUMN;
@@ -319,6 +334,8 @@ public interface MovementHelper extends ActionCosts {
      * @return Whether or not the specified block can be walked on
      */
     static boolean canWalkOn(BlockStateInterface bsi, int x, int y, int z, BlockState state, Settings settings) {
+        if (AltoClefSettings.getInstance().canWalkOnForce(x, y, z)) return true;
+        if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(x, y + 1, z)) return false;
         Block block = state.getBlock();
         if (block instanceof AirBlock || block == Blocks.MAGMA_BLOCK || block == Blocks.BUBBLE_COLUMN || block == Blocks.HONEY_BLOCK) {
             // early return for most common case (air)
@@ -335,6 +352,12 @@ public interface MovementHelper extends ActionCosts {
             return true;
         }
         if (block == Blocks.ENDER_CHEST || block == Blocks.CHEST || block == Blocks.TRAPPED_CHEST) {
+            return true;
+        }
+        if (block instanceof EndPortalFrameBlock) {
+            return true;
+        }
+        if (block == Blocks.END_PORTAL && AltoClefSettings.getInstance().isCanWalkOnEndPortal()) {
             return true;
         }
         if (isWater(state)) {
@@ -400,6 +423,7 @@ public interface MovementHelper extends ActionCosts {
         // can we look at the center of a side face of this block and likely be able to place?
         // (thats how this check is used)
         // therefore dont include weird things that we technically could place against (like carpet) but practically can't
+        if (AltoClefSettings.getInstance().shouldAvoidPlacingAt(x, y, z)) return false;
         return isBlockNormalCube(state) || state.getBlock() == Blocks.GLASS || state.getBlock() instanceof StainedGlassBlock;
     }
 
@@ -424,6 +448,9 @@ public interface MovementHelper extends ActionCosts {
             }
             double strVsBlock = context.toolSet.getStrVsBlock(state);
             if (strVsBlock <= 0) {
+                return COST_INF;
+            }
+            if (AltoClefSettings.getInstance().shouldAvoidBreaking(x, y, z)) {
                 return COST_INF;
             }
             double result = 1 / strVsBlock;
@@ -453,6 +480,7 @@ public interface MovementHelper extends ActionCosts {
      * @param b   the blockstate to mine
      */
     static void switchToBestToolFor(IEntityContext ctx, BlockState b) {
+        if (AltoClefSettings.getInstance().isInteractionPaused()) return;
         LivingEntity entity = ctx.entity();
         if (entity instanceof PlayerEntity) {
             switchToBestToolFor(ctx, b, new ToolSet((PlayerEntity) entity), ctx.baritone().settings().preferSilkTouch.get());
@@ -491,7 +519,11 @@ public interface MovementHelper extends ActionCosts {
      * @return Whether or not the block is water
      */
     static boolean isWater(BlockState state) {
-        return state.getFluidState().isIn(FluidTags.WATER);
+        Fluid f = state.getFluidState().getFluid();
+        if (f == Fluids.WATER || f == Fluids.FLOWING_WATER) {
+            return true;
+        }
+        return (f == Fluids.LAVA || f == Fluids.FLOWING_LAVA) && AltoClefSettings.getInstance().canSwimThroughLava();
     }
 
     /**

@@ -19,6 +19,7 @@ package baritone.process;
 
 import baritone.Automatone;
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.pathing.goals.GoalComposite;
@@ -39,6 +40,7 @@ import baritone.api.utils.input.Input;
 import baritone.pathing.movement.CalculationContext;
 import baritone.pathing.movement.Movement;
 import baritone.pathing.movement.MovementHelper;
+import baritone.pathing.path.PathExecutor;
 import baritone.utils.BaritoneProcessHelper;
 import baritone.utils.BlockStateInterface;
 import baritone.utils.NotificationHelper;
@@ -70,13 +72,7 @@ import net.minecraft.util.shape.VoxelShape;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static baritone.api.pathing.movement.ActionCosts.COST_INF;
@@ -94,13 +90,57 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
     private int layer;
     private int numRepeats;
     private List<BlockState> approxPlaceable;
+    private final Map<BlockState, Integer> protectedItems = new HashMap<>();
+
+    private boolean fromAltoclef;
+    private Map<BlockState, Integer> missing;
+    private boolean active;
+    private Stack<Object> stateStack = new Stack<>();
 
     public BuilderProcess(Baritone baritone) {
         super(baritone);
     }
 
+    private Vec3i schemSize;
+    private boolean fromAltoclefFinished;
+    private final Map<BlockPos, HistoryInfo> blockBreakHistory = new HashMap<>();
+
+    private void pushState() {
+        stateStack.clear();
+        stateStack.push(this.approxPlaceable);
+        stateStack.push(this.ticks);
+        stateStack.push(this.incorrectPositions);
+        stateStack.push(this.name);
+        stateStack.push(this.schematic);
+        stateStack.push(this.realSchematic);
+        stateStack.push(this.origin);
+        stateStack.push(this.paused);
+        stateStack.push(this.layer);
+        stateStack.push(this.numRepeats);
+        stateStack.push(this.observedCompleted);
+        stateStack.push(this.active);
+        stateStack.push(this.missing);
+        stateStack.push(this.schemSize);
+        stateStack.push(this.fromAltoclefFinished);
+        stateStack.push(this.fromAltoclef);
+    }
+
+    @Override
+    public double priority() {
+        return super.priority();
+    }
+
+    @Override
+    public String displayName() {
+        return super.displayName();
+    }
+
     @Override
     public void build(String name, ISchematic schematic, Vec3i origin) {
+        //Shouldn't get initially called
+        if (this.fromAltoclef && this.stateStack.isEmpty()) {
+            pushState();
+        }
         this.name = name;
         this.schematic = schematic;
         this.realSchematic = null;
@@ -121,10 +161,71 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
         this.layer = baritone.settings().startAtLayer.get();
         this.numRepeats = 0;
         this.observedCompleted = new LongOpenHashSet();
+        this.incorrectPositions = null;
+        this.active = true;
+        if (this.missing != null) {
+            this.missing.clear();
+        } else {
+            missing = new HashMap<>();
+        }
+        this.schemSize = new Vec3i(schematic.widthX(), schematic.heightY(), schematic.lengthZ());
+        this.fromAltoclefFinished = false;
+        this.fromAltoclef = false;
+    }
+
+    @Override
+    public void popStack() {
+        if (this.stateStack.isEmpty()) {
+            logDirect("ERROR in BuildProcess: No state present to pop");
+            return;
+        }
+        this.fromAltoclef = (boolean) stateStack.pop();
+        this.fromAltoclefFinished = (boolean) stateStack.pop();
+        this.schemSize = (Vec3i) stateStack.pop();
+        this.missing = (Map<BlockState, Integer>) stateStack.pop();
+        this.active = (boolean) stateStack.pop();
+        this.observedCompleted = (LongOpenHashSet) stateStack.pop();
+        this.numRepeats = (int) stateStack.pop();
+        this.layer = (int) stateStack.pop();
+        this.paused = (boolean) stateStack.pop();
+        this.origin = (Vec3i) stateStack.pop();
+        this.realSchematic = (ISchematic) stateStack.pop();
+        this.schematic = (ISchematic) stateStack.pop();
+        this.name = (String) stateStack.pop();
+        this.incorrectPositions = (HashSet<BetterBlockPos>) stateStack.pop();
+        this.ticks = (int) stateStack.pop();
+        this.approxPlaceable = (List<BlockState>) stateStack.pop();
+        pushState();
+        if (!stateStack.isEmpty()) {
+            logDirect("ERROR: state stack was not empty after state restoration. Will throw away the rest for now.");
+            stateStack.clear();
+        }
+    }
+
+    @Override
+    public boolean isFromAltoclefFinished() {
+        return this.fromAltoclefFinished;
+    }
+
+    private void stopProtectItemOfMissing() {
+        if (protectedItems != null && protectedItems.size() > 0) {
+            protectedItems.keySet().forEach(e -> {
+                if (AltoClefSettings.getInstance().isItemProtected(e.getBlock().asItem())) {
+                    AltoClefSettings.getInstance().stopProtectingItem(e.getBlock().asItem());
+                }
+            });
+        }
+        assert protectedItems != null;
+        protectedItems.clear();
     }
 
     public void resume() {
-        paused = false;
+        if (!this.stateStack.isEmpty()) {
+            popStack();
+        }
+
+        this.paused = false;
+        this.active = true;
     }
 
     public void pause() {
@@ -285,8 +386,26 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
     }
 
     public boolean placementPlausible(BlockPos pos, BlockState state) {
+        if (state == null) return false;
         VoxelShape voxelshape = state.getCollisionShape(ctx.world(), pos);
         return voxelshape.isEmpty() || ctx.world().doesNotIntersectEntities(null, voxelshape.offset(pos.getX(), pos.getY(), pos.getZ()));
+    }
+
+    private BlockPos getFromHistory(final BlockPos pos) {
+        if (pos == null) return null;
+
+        final Optional<BlockPos> opt = blockBreakHistory.keySet().stream()
+                .filter(e -> e.getX() == pos.getX() && e.getY() == pos.getY() && e.getZ() == pos.getZ()).findFirst();
+
+        if (opt.isPresent()) {
+            return opt.get();
+        }
+
+        return null;
+    }
+
+    private boolean anyHistoryMatch(final BlockPos pos) {
+        return getFromHistory(pos) != null; //blockBreakHistory.keySet().stream().anyMatch(e -> e.getX() == pos.getX() && e.getY() == pos.getY() && e.getZ() == pos.getZ());
     }
 
     private Optional<Placement> possibleToPlace(BlockState toPlace, int x, int y, int z, BlockStateInterface bsi) {
@@ -354,6 +473,17 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
             }
         }
         return OptionalInt.empty();
+    }
+
+    private void noteRemoval(final BlockPos pos) {
+        if (pos == null) return;
+        if (anyHistoryMatch(pos)) {
+            final BlockPos orig = getFromHistory(pos);
+            final HistoryInfo info = blockBreakHistory.get(orig);
+            if (!info.brokenPreviously) {
+                info.brokenPreviously = true;
+            }
+        }
     }
 
     private static Vec3d[] aabbSideMultipliers(Direction side) {
@@ -462,7 +592,13 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
                 if (baritone.settings().desktopNotifications.get() && baritone.settings().notificationOnBuildFinished.get()) {
                     NotificationHelper.notify("Done building", false);
                 }
+                if (this.fromAltoclef) {
+                    this.fromAltoclefFinished = true;
+                }
                 onLostControl();
+                if (this.fromAltoclefFinished) {
+                    this.stateStack.clear();
+                }
                 return null;
             }
             // build repeat time
@@ -493,13 +629,15 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
                 baritone.getInputOverrideHandler().setInputForceState(Input.SNEAK, true);
             }
             if (ctx.isLookingAt(pos) || ctx.entityRotations().isReallyCloseTo(rot)) {
+                if (anyHistoryMatch(pos))
+                    noteRemoval(pos);
                 baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
             }
             return new PathingCommand(null, PathingCommandType.CANCEL_AND_SET_GOAL);
         }
         List<BlockState> desirableOnHotbar = new ArrayList<>();
         Optional<Placement> toPlace = searchForPlacables(bcc, desirableOnHotbar);
-        if (toPlace.isPresent() && isSafeToCancel && ctx.entity().isOnGround() && ticks <= 0) {
+        if (!AltoClefSettings.getInstance().isInteractionPaused() && toPlace.isPresent() && isSafeToCancel && ctx.entity().isOnGround() && ticks <= 0) {
             Rotation rot = toPlace.get().rot;
             baritone.getLookBehavior().updateTarget(rot, true);
             inventory.selectedSlot = toPlace.get().hotbarSelection;
@@ -507,10 +645,11 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
             if ((ctx.isLookingAt(toPlace.get().placeAgainst) && ((BlockHitResult) ctx.objectMouseOver()).getSide().equals(toPlace.get().side)) || ctx.entityRotations().isReallyCloseTo(rot)) {
                 baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
             }
+            stopProtectItemOfMissing();
             return new PathingCommand(null, PathingCommandType.CANCEL_AND_SET_GOAL);
         }
 
-        if (baritone.settings().allowInventory.get()) {
+        if (!AltoClefSettings.getInstance().isInteractionPaused() && baritone.settings().allowInventory.get()) {
             ArrayList<Integer> usefulSlots = new ArrayList<>();
             List<BlockState> noValidHotbarOption = new ArrayList<>();
             outer:
@@ -549,7 +688,17 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
                 return new PathingCommand(null, PathingCommandType.REQUEST_PAUSE);
             }
         }
+        updateMovement();
         return new PathingCommandContext(goal, PathingCommandType.FORCE_REVALIDATE_GOAL_AND_PATH, bcc);
+    }
+
+    private void updateMovement() {
+        PathExecutor exec = baritone.getPathingBehavior().getCurrent();
+        if (exec == null || exec.finished() || exec.failed()) {
+            return;
+        }
+        Movement movement = (Movement) exec.getPath().movements().get(exec.getPosition());
+        movement.update();
     }
 
     private boolean recalc(BuilderCalculationContext bcc) {
@@ -705,6 +854,11 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
         return new GoalComposite(toBreak.toArray(new Goal[0]));
     }
 
+    @Override
+    public void logDirect(String message) {
+        super.logDirect(message);
+    }
+
     public static class JankyGoalComposite implements Goal {
 
         private final Goal primary;
@@ -826,6 +980,9 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
 
     @Override
     public void onLostControl() {
+        if (this.fromAltoclef && this.stateStack.isEmpty()) {
+            pushState();
+        }
         incorrectPositions = null;
         name = null;
         schematic = null;
@@ -834,6 +991,12 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
         numRepeats = 0;
         paused = false;
         observedCompleted = null;
+        origin = null;
+        missing = null;
+        schemSize = null;
+        fromAltoclef = false;
+        active = false;
+        blockBreakHistory.clear();
     }
 
     @Override
@@ -989,4 +1152,10 @@ public final class BuilderProcess extends BaritoneProcessHelper implements IBuil
             }
         }
     }
+
+    private static final class HistoryInfo {
+        public long counter = 0;
+        public boolean brokenPreviously = false;
+    }
+
 }

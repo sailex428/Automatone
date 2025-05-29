@@ -17,6 +17,7 @@
 
 package baritone.pathing.movement.movements;
 
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.IBaritone;
 import baritone.api.Settings;
 import baritone.api.pathing.movement.MovementStatus;
@@ -41,7 +42,6 @@ import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
 
 import java.util.Optional;
 import java.util.Set;
@@ -288,6 +288,10 @@ public class MovementTraverse extends Movement {
                 }
             }
 
+            if (AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(positionsToBreak[0]) || AltoClefSettings.getInstance().shouldAvoidWalkThroughForce(positionsToBreak[1])) {
+                return state;
+            }
+
             // and we aren't already pressed up against the block
             double dist = Math.max(Math.abs(ctx.entity().getX() - (dest.getX() + 0.5D)), Math.abs(ctx.entity().getZ() - (dest.getZ() + 0.5D)));
             if (dist < 0.83) {
@@ -398,8 +402,8 @@ public class MovementTraverse extends Movement {
             }
         } else {
             wasTheBridgeBlockAlwaysThere = false;
-            VoxelShape collisionShape = standingOn.getCollisionShape(ctx.world(), standingOnPos);
-            if (!collisionShape.isEmpty() && collisionShape.getBoundingBox().maxY < 1) { // see issue #118
+//            VoxelShape collisionShape = standingOn.getCollisionShape(ctx.world(), standingOnPos);
+            if ((standingOn.getBlock().equals(Blocks.SOUL_SAND) && !AltoClefSettings.getInstance().shouldTreatSoulSandAsOrdinaryBlock()) || standingOn.getBlock() instanceof SlabBlock) {  // see issue #118
                 double dist = Math.max(Math.abs(dest.getX() + 0.5 - ctx.entity().getX()), Math.abs(dest.getZ() + 0.5 - ctx.entity().getZ()));
                 if (dist < 0.85) { // 0.5 + 0.3 + epsilon
                     MovementHelper.moveTowards(ctx, state, dest);

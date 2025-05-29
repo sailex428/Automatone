@@ -19,6 +19,7 @@ package baritone.process;
 
 import baritone.Automatone;
 import baritone.Baritone;
+import baritone.altoclef.AltoClefSettings;
 import baritone.api.pathing.goals.*;
 import baritone.api.process.IMineProcess;
 import baritone.api.process.PathingCommand;
@@ -109,6 +110,9 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
             return null;
         }
         updateLoucaSystem();
+        if (AltoClefSettings.getInstance().isInteractionPaused()) {
+            return new PathingCommand(null, PathingCommandType.REQUEST_PAUSE);
+        }
         int mineGoalUpdateInterval = baritone.settings().mineGoalUpdateInterval.get();
         List<BlockPos> curr = new ArrayList<>(knownOreLocations);
         if (mineGoalUpdateInterval != 0 && tickCount++ % mineGoalUpdateInterval == 0) { // big brain
@@ -345,6 +349,7 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
     public static List<BlockPos> searchWorld(CalculationContext ctx, BlockOptionalMetaLookup filter, int max, List<BlockPos> alreadyKnown, List<BlockPos> blacklist, List<BlockPos> dropped) {
         List<BlockPos> locs = new ArrayList<>();
         List<Block> untracked = new ArrayList<>();
+        int maxTotal = max * filter.blocks().size();
         for (BlockOptionalMeta bom : filter.blocks()) {
             Block block = bom.getBlock();
             if (CachedChunk.BLOCKS_TO_KEEP_TRACK_OF.contains(block)) {
@@ -365,7 +370,7 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
 
         locs = prune(ctx, locs, filter, max, blacklist, dropped);
 
-        if (!untracked.isEmpty() || (ctx.baritone.settings().extendCacheOnThreshold.get() && locs.size() < max)) {
+        if (!untracked.isEmpty() || (ctx.baritone.settings().extendCacheOnThreshold.get() && locs.size() < maxTotal)) {
             locs.addAll(WorldScanner.INSTANCE.scanChunkRadius(
                     ctx.getBaritone().getPlayerContext(),
                     filter,
@@ -462,6 +467,11 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
 
 
     public static boolean plausibleToBreak(CalculationContext ctx, BlockPos pos) {
+        if (ctx.get(pos).getBlock() instanceof EndPortalFrameBlock ||
+                ctx.get(pos).getBlock() instanceof EndPortalBlock ||
+                ctx.get(pos).getBlock() == Blocks.LAVA) {
+            return true;
+        }
         if (MovementHelper.getMiningDurationTicks(ctx, pos.getX(), pos.getY(), pos.getZ(), ctx.bsi.get0(pos), true) >= COST_INF) {
             return false;
         }
