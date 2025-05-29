@@ -2,10 +2,12 @@ name: build-and-publish
 on:
   push:
     branches:
-      - main
+      - 1.21-fabric
+      - 1.21-altoclef
   pull_request:
     branches:
-      - main
+      - 1.21-fabric
+      - 1.21-altoclef
   workflow_dispatch:
 
 jobs:
