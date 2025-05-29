@@ -88,19 +88,26 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fapi_version}+${mc_version}"
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
     modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-base:${cca_version}") {
         transitive = false
     }
+    include("org.ladysnake.cardinal-components-api:cardinal-components-base:${cca_version}")
+
     modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-entity:${cca_version}") {
         transitive = false
     }
+    include("org.ladysnake.cardinal-components-api:cardinal-components-entity:${cca_version}")
+
     modImplementation("org.ladysnake.cardinal-components-api:cardinal-components-world:${cca_version}") {
         transitive = false
     }
-    compileOnly "com.demonwav.mcdev:annotations:1.0"
+    include("org.ladysnake.cardinal-components-api:cardinal-components-world:${cca_version}")
 
+    compileOnly "com.demonwav.mcdev:annotations:1.0"
     testImplementation 'junit:junit:4.12'
 }
+
 
 task testmodJar(type: Jar, dependsOn: testmodClasses) {
     archiveBaseName.set('Otomaton')
