@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "automatone",
-  "version": "0.12.7-altoclef",
+  "version": "0.12.9-altoclef",
   "name": "Automatone",
   "description": "A serverside Minecraft pathfinder bot.",
   "license": "LGPL-3.0",
