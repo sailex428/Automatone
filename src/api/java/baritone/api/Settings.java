@@ -1158,7 +1158,7 @@ public final class Settings {
 
     public final class Setting<T> {
 
-        private @Nullable T value;
+        public @Nullable T value;
         public final T defaultValue;
         private String name;
 
