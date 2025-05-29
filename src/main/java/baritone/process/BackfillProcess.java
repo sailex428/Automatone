@@ -44,7 +44,7 @@ public final class BackfillProcess extends BaritoneProcessHelper {
 
     @Override
     public boolean isActive() {
-        if (ctx.entity() == null || ctx.world() == null) {
+        if (ctx.player() == null || ctx.world() == null) {
             return false;
         }
         if (!baritone.settings().backfill.get()) {

@@ -246,9 +246,9 @@ public final class FarmProcess extends BaritoneProcessHelper implements IFarmPro
         both.addAll(openSoulsand);
         for (BlockPos pos : both) {
             boolean soulsand = openSoulsand.contains(pos);
-            Optional<Rotation> rot = RotationUtils.reachableOffset(ctx.entity(), pos, new Vec3d(pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5), ctx.playerController().getBlockReachDistance(), false);
+            Optional<Rotation> rot = RotationUtils.reachableOffset(ctx.player(), pos, new Vec3d(pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5), ctx.playerController().getBlockReachDistance(), false);
             if (rot.isPresent() && isSafeToCancel && baritone.getInventoryBehavior().throwaway(true, soulsand ? this::isNetherWart : this::isPlantable)) {
-                HitResult result = RayTraceUtils.rayTraceTowards(ctx.entity(), rot.get(), ctx.playerController().getBlockReachDistance());
+                HitResult result = RayTraceUtils.rayTraceTowards(ctx.player(), rot.get(), ctx.playerController().getBlockReachDistance());
                 if (result instanceof BlockHitResult && ((BlockHitResult) result).getSide() == Direction.UP) {
                     baritone.getLookBehavior().updateTarget(rot.get(), true);
                     if (ctx.isLookingAt(pos)) {
@@ -297,7 +297,7 @@ public final class FarmProcess extends BaritoneProcessHelper implements IFarmPro
                 goalz.add(new GoalBlock(pos));
             }
         }
-        for (ItemEntity item : ctx.world().getEntitiesByClass(ItemEntity.class, ctx.entity().getBoundingBox(ctx.entity().getPose()).expand(30), Entity::isOnGround)) {
+        for (ItemEntity item : ctx.world().getEntitiesByClass(ItemEntity.class, ctx.player().getBoundingBox(ctx.player().getPose()).expand(30), Entity::isOnGround)) {
             if (PICKUP_DROPPED.contains(item.getStack().getItem())) {
                 // +0.1 because of farmland's 0.9375 dummy height lol
                 goalz.add(new GoalBlock(BlockPos.ofFloored(item.getX(), item.getY() + 0.1, item.getZ())));

@@ -22,7 +22,7 @@ import baritone.api.IBaritone;
 import baritone.api.Settings;
 import baritone.api.pathing.movement.MovementStatus;
 import baritone.api.utils.BetterBlockPos;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.api.utils.Rotation;
 import baritone.api.utils.RotationUtils;
 import baritone.api.utils.VecUtils;
@@ -70,7 +70,7 @@ import java.util.Set;
 public class MovementPillar extends Movement {
 
     public MovementPillar(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().entity(), start), start);
+        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().player(), start), start);
     }
 
     public static BetterBlockPos[] buildPositionsToBreak(Entity entity, BetterBlockPos start) {
@@ -228,7 +228,7 @@ public class MovementPillar extends Movement {
         }
 
         BlockState fromDown = BlockStateInterface.get(ctx, src);
-        if (ctx.entity().isTouchingWater() || MovementHelper.isWater(ctx, src.up(MathHelper.ceil(ctx.entity().getHeight())))) {
+        if (ctx.player().isTouchingWater() || MovementHelper.isWater(ctx, src.up(MathHelper.ceil(ctx.player().getHeight())))) {
             // stay centered while swimming up a water column
             centerForAscend(ctx, dest, state, 0.2);
             state.setInput(Input.JUMP, true);
@@ -238,16 +238,16 @@ public class MovementPillar extends Movement {
             return state;
         }
         boolean ladder = isClimbable(((Baritone) baritone).bsi, src.x, src.y, src.z);
-        Rotation rotation = RotationUtils.calcRotationFromVec3d(ctx.headPos(),
+        Rotation rotation = RotationUtils.calcRotationFromVec3d(ctx.playerHead(),
                 VecUtils.getBlockPosCenter(positionToPlace),
-                new Rotation(ctx.entity().getYaw(), ctx.entity().getPitch()));
+                new Rotation(ctx.player().getYaw(), ctx.player().getPitch()));
         if (!ladder) {
-            state.setTarget(new MovementState.MovementTarget(new Rotation(ctx.entity().getYaw(), rotation.getPitch()), true));
+            state.setTarget(new MovementState.MovementTarget(new Rotation(ctx.player().getYaw(), rotation.getPitch()), true));
         }
 
         boolean blockIsThere = MovementHelper.canWalkOn(ctx, src) || ladder;
         if (ladder) {
-            if (ctx.entity().getWidth() > 1) {
+            if (ctx.player().getWidth() > 1) {
                 baritone.logDirect("Large entities cannot climb ladders :/");
                 return state.setStatus(MovementStatus.UNREACHABLE);
             }
@@ -271,13 +271,13 @@ public class MovementPillar extends Movement {
             }
 
 
-            state.setInput(Input.SNEAK, ctx.entity().getY() > dest.getY() || ctx.entity().getY() < src.getY() + 0.2D); // delay placement by 1 tick for ncp compatibility
+            state.setInput(Input.SNEAK, ctx.player().getY() > dest.getY() || ctx.player().getY() < src.getY() + 0.2D); // delay placement by 1 tick for ncp compatibility
             // since (lower down) we only right click once player.isSneaking, and that happens the tick after we request to sneak
 
-            double diffX = ctx.entity().getX() - (dest.getX() + 0.5);
-            double diffZ = ctx.entity().getZ() - (dest.getZ() + 0.5);
+            double diffX = ctx.player().getX() - (dest.getX() + 0.5);
+            double diffZ = ctx.player().getZ() - (dest.getZ() + 0.5);
             double dist = Math.sqrt(diffX * diffX + diffZ * diffZ);
-            double flatMotion = Math.sqrt(ctx.entity().getVelocity().x * ctx.entity().getVelocity().x + ctx.entity().getVelocity().z * ctx.entity().getVelocity().z);
+            double flatMotion = Math.sqrt(ctx.player().getVelocity().x * ctx.player().getVelocity().x + ctx.player().getVelocity().z * ctx.player().getVelocity().z);
             if (dist > 0.17) {//why 0.17? because it seemed like a good number, that's why
                 //[explanation added after baritone port lol] also because it needs to be less than 0.2 because of the 0.3 sneak limit
                 //and 0.17 is reasonably less than 0.2
@@ -289,7 +289,7 @@ public class MovementPillar extends Movement {
                 state.setTarget(new MovementState.MovementTarget(rotation, true));
             } else if (flatMotion < 0.05) {
                 // If our Y coordinate is above our goal, stop jumping
-                state.setInput(Input.JUMP, ctx.entity().getY() < dest.getY());
+                state.setInput(Input.JUMP, ctx.player().getY() < dest.getY());
             }
 
 
@@ -297,13 +297,13 @@ public class MovementPillar extends Movement {
                 BlockState frState = BlockStateInterface.get(ctx, src);
                 // TODO: Evaluate usage of getMaterial().isReplaceable()
                 if (!(frState.isAir() || frState.isReplaceable())) {
-                    RotationUtils.reachable(ctx.entity(), src, ctx.playerController().getBlockReachDistance())
+                    RotationUtils.reachable(ctx.player(), src, ctx.playerController().getBlockReachDistance())
                             .map(rot -> new MovementState.MovementTarget(rot, true))
                             .ifPresent(state::setTarget);
                     state.setInput(Input.JUMP, false); // breaking is like 5x slower when you're jumping
                     state.setInput(Input.CLICK_LEFT, true);
                     blockIsThere = false;
-                } else if (ctx.entity().isSneaking() && (ctx.isLookingAt(src.down()) || ctx.isLookingAt(src)) && ctx.entity().getY() > dest.getY() + 0.1) {
+                } else if (ctx.player().isSneaking() && (ctx.isLookingAt(src.down()) || ctx.isLookingAt(src)) && ctx.player().getY() > dest.getY() + 0.1) {
                     state.setInput(Input.CLICK_RIGHT, true);
                 }
             }
@@ -318,7 +318,7 @@ public class MovementPillar extends Movement {
     }
 
     @Nullable
-    public static BlockPos getSupportingBlock(IBaritone baritone, IEntityContext ctx, BetterBlockPos src, BlockState climbableBlock) {
+    public static BlockPos getSupportingBlock(IBaritone baritone, IPlayerContext ctx, BetterBlockPos src, BlockState climbableBlock) {
         BlockPos supportingBlock;
         if (Block.isFaceFullSquare(climbableBlock.getCollisionShape(ctx.world(), src), Direction.UP)) {
             supportingBlock = null;
@@ -330,10 +330,10 @@ public class MovementPillar extends Movement {
         return supportingBlock;
     }
 
-    public static void centerForAscend(IEntityContext ctx, BetterBlockPos dest, MovementState state, double allowedDistance) {
-        state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.getBlockPosCenter(dest), ctx.entityRotations()), false));
+    public static void centerForAscend(IPlayerContext ctx, BetterBlockPos dest, MovementState state, double allowedDistance) {
+        state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.getBlockPosCenter(dest), ctx.playerRotations()), false));
         Vec3d destCenter = VecUtils.getBlockPosCenter(dest);
-        if (Math.abs(ctx.entity().getX() - destCenter.x) > allowedDistance || Math.abs(ctx.entity().getZ() - destCenter.z) > allowedDistance) {
+        if (Math.abs(ctx.player().getX() - destCenter.x) > allowedDistance || Math.abs(ctx.player().getZ() - destCenter.z) > allowedDistance) {
             state.setInput(Input.MOVE_FORWARD, true);
         }
     }

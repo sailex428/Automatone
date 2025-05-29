@@ -23,7 +23,7 @@ import baritone.api.Settings;
 import baritone.api.cache.IWorldProvider;
 import baritone.api.event.listener.IEventBus;
 import baritone.api.process.IBaritoneProcess;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.behavior.Behavior;
 import baritone.behavior.InventoryBehavior;
 import baritone.behavior.LookBehavior;
@@ -38,7 +38,7 @@ import baritone.render.ClientPathingBehaviour;
 import baritone.utils.BlockStateInterface;
 import baritone.utils.InputOverrideHandler;
 import baritone.utils.PathingControlManager;
-import baritone.utils.player.EntityContext;
+import baritone.utils.player.PlayerContext;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
@@ -73,7 +73,7 @@ public class Baritone implements IBaritone {
     private final PathingControlManager pathingControlManager;
     private final BaritoneCommandManager commandManager;
 
-    private final IEntityContext playerContext;
+    private final IPlayerContext playerContext;
 
     private final @Nullable ClientPathingBehaviour clientPathingBehaviour;
 
@@ -84,7 +84,7 @@ public class Baritone implements IBaritone {
         this.gameEventHandler = new GameEventHandler(this);
 
         // Define this before behaviors try and get it, or else it will be null and the builds will fail!
-        this.playerContext = new EntityContext(player);
+        this.playerContext = new PlayerContext(player);
 
         {
             // the Behavior constructor calls baritone.registerBehavior(this) so this populates the behaviors arraylist
@@ -137,7 +137,7 @@ public class Baritone implements IBaritone {
     }
 
     @Override
-    public IEntityContext getPlayerContext() {
+    public IPlayerContext getPlayerContext() {
         return this.playerContext;
     }
 

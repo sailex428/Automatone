@@ -62,7 +62,7 @@ public class MovementDescend extends Movement {
     private int numTicks = 0;
 
     public MovementDescend(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().entity(), start, end), end.down());
+        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().player(), start, end), end.down());
     }
 
     @NotNull
@@ -259,7 +259,7 @@ public class MovementDescend extends Movement {
 
         BlockPos playerFeet = ctx.feetPos();
         BlockPos fakeDest = new BlockPos(dest.getX() * 2 - src.getX(), dest.getY(), dest.getZ() * 2 - src.getZ());
-        if ((playerFeet.equals(dest) || playerFeet.equals(fakeDest)) && (MovementHelper.isLiquid(ctx, dest) || ctx.entity().getY() - dest.getY() < 0.5)) { // lilypads
+        if ((playerFeet.equals(dest) || playerFeet.equals(fakeDest)) && (MovementHelper.isLiquid(ctx, dest) || ctx.player().getY() - dest.getY() < 0.5)) { // lilypads
             // Wait until we're actually on the ground before saying we're done because sometimes we continue to fall if the next action starts immediately
             return state.setStatus(MovementStatus.SUCCESS);
             /* else {
@@ -267,28 +267,28 @@ public class MovementDescend extends Movement {
             }*/
         }
 
-        double diffX = ctx.entity().getX() - (dest.getX() + 0.5);
-        double diffZ = ctx.entity().getZ() - (dest.getZ() + 0.5);
+        double diffX = ctx.player().getX() - (dest.getX() + 0.5);
+        double diffZ = ctx.player().getZ() - (dest.getZ() + 0.5);
         double ab = Math.sqrt(diffX * diffX + diffZ * diffZ);
 
-        if (ab < 0.20 && (ctx.world().getBlockState(dest).isOf(Blocks.SCAFFOLDING) || ctx.entity().isSubmergedInWater() && ctx.entity().getY() > src.y)) {
+        if (ab < 0.20 && (ctx.world().getBlockState(dest).isOf(Blocks.SCAFFOLDING) || ctx.player().isSubmergedInWater() && ctx.player().getY() > src.y)) {
             state.setInput(Input.SNEAK, true);
         }
 
         if (safeMode()) {
             double destX = (src.getX() + 0.5) * 0.17 + (dest.getX() + 0.5) * 0.83;
             double destZ = (src.getZ() + 0.5) * 0.17 + (dest.getZ() + 0.5) * 0.83;
-            LivingEntity player = ctx.entity();
+            LivingEntity player = ctx.player();
             state.setTarget(new MovementState.MovementTarget(
-                    new Rotation(RotationUtils.calcRotationFromVec3d(ctx.headPos(),
+                    new Rotation(RotationUtils.calcRotationFromVec3d(ctx.playerHead(),
                             new Vec3d(destX, dest.getY(), destZ),
                             new Rotation(player.getYaw(), player.getPitch())).getYaw(), player.getPitch()),
                     false
             )).setInput(Input.MOVE_FORWARD, true);
             return state;
         }
-        double x = ctx.entity().getX() - (src.getX() + 0.5);
-        double z = ctx.entity().getZ() - (src.getZ() + 0.5);
+        double x = ctx.player().getX() - (src.getX() + 0.5);
+        double z = ctx.player().getZ() - (src.getZ() + 0.5);
         double fromStart = Math.sqrt(x * x + z * z);
         if (!playerFeet.equals(dest) || ab > 0.25) {
             if (numTicks++ < 20 && fromStart < 1.25) {

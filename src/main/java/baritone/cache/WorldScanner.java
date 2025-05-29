@@ -20,7 +20,7 @@ package baritone.cache;
 import baritone.api.cache.IWorldScanner;
 import baritone.api.utils.BetterBlockPos;
 import baritone.api.utils.BlockOptionalMetaLookup;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.utils.accessor.ServerChunkManagerAccessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.server.world.ServerWorld;
@@ -48,7 +48,7 @@ public enum WorldScanner implements IWorldScanner {
     private static final int[] DEFAULT_COORDINATE_ITERATION_ORDER = IntStream.range(0, 16).toArray();
 
     @Override
-    public List<BlockPos> scanChunkRadius(IEntityContext ctx, BlockOptionalMetaLookup filter, int max, int yLevelThreshold, int maxSearchRadius) {
+    public List<BlockPos> scanChunkRadius(IPlayerContext ctx, BlockOptionalMetaLookup filter, int max, int yLevelThreshold, int maxSearchRadius) {
         ArrayList<BlockPos> res = new ArrayList<>();
 
         if (filter.blocks().isEmpty()) {
@@ -99,7 +99,7 @@ public enum WorldScanner implements IWorldScanner {
     }
 
     @Override
-    public List<BlockPos> scanChunk(IEntityContext ctx, BlockOptionalMetaLookup filter, ChunkPos pos, int max, int yLevelThreshold) {
+    public List<BlockPos> scanChunk(IPlayerContext ctx, BlockOptionalMetaLookup filter, ChunkPos pos, int max, int yLevelThreshold) {
         if (filter.blocks().isEmpty()) {
             return Collections.emptyList();
         }
@@ -120,12 +120,12 @@ public enum WorldScanner implements IWorldScanner {
     }
 
     @Override
-    public int repack(IEntityContext ctx) {
+    public int repack(IPlayerContext ctx) {
         return this.repack(ctx, 40);
     }
 
     @Override
-    public int repack(IEntityContext ctx, int range) {
+    public int repack(IPlayerContext ctx, int range) {
         ChunkManager chunkProvider = ctx.world().getChunkManager();
 
         BetterBlockPos playerPos = ctx.feetPos();

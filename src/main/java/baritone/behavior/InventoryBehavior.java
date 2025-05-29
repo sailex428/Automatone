@@ -55,7 +55,7 @@ public final class InventoryBehavior extends Behavior {
         if (!baritone.settings().allowInventory.get() || AltoClefSettings.getInstance().isInteractionPaused()) {
             return;
         }
-        if (!(ctx.entity() instanceof PlayerEntity player)) {
+        if (!(ctx.player() instanceof PlayerEntity player)) {
             return;
         }
         if (player.playerScreenHandler != player.currentScreenHandler) {
@@ -139,7 +139,7 @@ public final class InventoryBehavior extends Behavior {
                 continue;
             }
             if (cla$$.isInstance(stack.getItem())) {
-                double speed = ToolSet.calculateSpeedVsBlock(stack, against.getDefaultState(), ctx.entity()); // takes into account enchants
+                double speed = ToolSet.calculateSpeedVsBlock(stack, against.getDefaultState(), ctx.player()); // takes into account enchants
                 if (speed > bestSpeed) {
                     bestSpeed = speed;
                     bestInd = i;
@@ -156,7 +156,7 @@ public final class InventoryBehavior extends Behavior {
     }
 
     public boolean selectThrowawayForLocation(boolean select, int x, int y, int z) {
-        if (!(ctx.entity() instanceof PlayerEntity player)) return false;
+        if (!(ctx.player() instanceof PlayerEntity player)) return false;
         if (AltoClefSettings.getInstance().isInteractionPaused()) return false;
         if (AltoClefSettings.getInstance().shouldAvoidPlacingAt(x, y, z)) return false;
 
@@ -173,7 +173,7 @@ public final class InventoryBehavior extends Behavior {
     }
 
     public boolean throwaway(boolean select, Predicate<? super ItemStack> desired) {
-        if (!(ctx.entity() instanceof PlayerEntity p)) return false;
+        if (!(ctx.player() instanceof PlayerEntity p)) return false;
         if (AltoClefSettings.getInstance().isInteractionPaused()) return false;
 
         DefaultedList<ItemStack> inv = p.getInventory().main;

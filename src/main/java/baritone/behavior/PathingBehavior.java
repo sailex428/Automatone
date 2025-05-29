@@ -36,7 +36,6 @@ import baritone.pathing.movement.MovementHelper;
 import baritone.pathing.path.PathExecutor;
 import baritone.utils.PathingCommandContext;
 import baritone.utils.pathing.Favoring;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
@@ -100,13 +99,13 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior 
         dispatchEvents();
         // Fuck it, synchronizing every tick for now
         // TODO try not to synchronize every tick
-        IBaritone.KEY.sync(this.baritone.getPlayerContext().entity());
+        IBaritone.KEY.sync(this.baritone.getPlayerContext().player());
     }
 
     public void shutdown() {
         secretInternalSegmentCancel();
         baritone.getPathingControlManager().cancelEverything();
-        IBaritone.KEY.sync(this.baritone.getPlayerContext().entity());
+        IBaritone.KEY.sync(this.baritone.getPlayerContext().player());
     }
 
     private void tickPath() {
@@ -399,9 +398,9 @@ public final class PathingBehavior extends Behavior implements IPathingBehavior 
     public BetterBlockPos pathStart() { // TODO move to a helper or util class
         BetterBlockPos feet = ctx.feetPos();
         if (!MovementHelper.canWalkOn(ctx, feet.down())) {
-            if (ctx.entity().isOnGround()) {
-                double playerX = ctx.entity().getX();
-                double playerZ = ctx.entity().getZ();
+            if (ctx.player().isOnGround()) {
+                double playerX = ctx.player().getX();
+                double playerZ = ctx.player().getZ();
                 ArrayList<BetterBlockPos> closest = new ArrayList<>();
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {

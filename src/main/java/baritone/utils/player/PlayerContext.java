@@ -21,7 +21,7 @@ import baritone.api.BaritoneAPI;
 import baritone.api.cache.IWorldData;
 import baritone.api.pathing.calc.Avoidance;
 import baritone.api.utils.BetterBlockPos;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.api.utils.IPlayerController;
 import baritone.api.utils.RayTraceUtils;
 import baritone.utils.accessor.ServerChunkManagerAccessor;
@@ -31,7 +31,6 @@ import net.minecraft.entity.mob.EndermanEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.entity.mob.ZombifiedPiglinEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -46,53 +45,53 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class EntityContext implements IEntityContext {
+public class PlayerContext implements IPlayerContext {
 
-    private final ServerPlayerEntity entity;
+    private final ServerPlayerEntity player;
     private @Nullable Supplier<List<Avoidance>> avoidanceFinder;
 
-    public EntityContext(ServerPlayerEntity entity) {
-        this.entity = entity;
+    public PlayerContext(ServerPlayerEntity player) {
+        this.player = player;
     }
 
     @Override
-    public ServerPlayerEntity entity() {
-        return this.entity;
+    public ServerPlayerEntity player() {
+        return this.player;
     }
 
     @Override
     public @Nullable PlayerInventory inventory() {
-        return entity.getInventory();
+        return player.getInventory();
     }
 
     @Override
     public IPlayerController playerController() {
-        return IPlayerController.KEY.get(this.entity);
+        return IPlayerController.KEY.get(this.player);
     }
 
     @Override
     public ServerWorld world() {
-        World world = this.entity.getWorld();
+        World world = this.player.getWorld();
         if (world.isClient) throw new IllegalStateException();
         return (ServerWorld) world;
     }
 
     @Override
     public IWorldData worldData() {
-        return BaritoneAPI.getProvider().getBaritone(this.entity).getPlayerContext().worldData();
+        return BaritoneAPI.getProvider().getBaritone(this.player).getPlayerContext().worldData();
     }
 
     @Override
     public HitResult objectMouseOver() {
-        return RayTraceUtils.rayTraceTowards(entity(), entityRotations(), playerController().getBlockReachDistance());
+        return RayTraceUtils.rayTraceTowards(player(), playerRotations(), playerController().getBlockReachDistance());
     }
 
     @Override
     public BetterBlockPos feetPos() {
         // TODO find a better way to deal with soul sand!!!!!
-        double x = entity().getX();
-        double z = entity().getZ();
-        BetterBlockPos feet = new BetterBlockPos(x, entity().getY() + 0.1251, z);
+        double x = player().getX();
+        double z = player().getZ();
+        BetterBlockPos feet = new BetterBlockPos(x, player().getY() + 0.1251, z);
 
         ServerWorld world = world();
         if (world != null) {

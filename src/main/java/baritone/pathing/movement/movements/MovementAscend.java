@@ -57,7 +57,7 @@ public class MovementAscend extends Movement {
     private int ticksWithoutPlacement = 0;
 
     public MovementAscend(IBaritone baritone, BetterBlockPos src, BetterBlockPos dest) {
-        super(baritone, src, dest, buildPositionsToBreak(baritone.getPlayerContext().entity(), src, dest), buildPositionsToPlace(baritone.getPlayerContext().entity(), src, dest));
+        super(baritone, src, dest, buildPositionsToBreak(baritone.getPlayerContext().player(), src, dest), buildPositionsToPlace(baritone.getPlayerContext().player(), src, dest));
     }
 
     private static BetterBlockPos buildPositionsToPlace(LivingEntity entity, BetterBlockPos src, BetterBlockPos dest) {
@@ -248,7 +248,7 @@ public class MovementAscend extends Movement {
             ticksWithoutPlacement++;
             if (MovementHelper.attemptToPlaceABlock(state, baritone, positionToPlace, false, true) == PlaceResult.READY_TO_PLACE) {
                 state.setInput(Input.SNEAK, true);
-                if (ctx.entity().isSneaking()) {
+                if (ctx.player().isSneaking()) {
                     state.setInput(Input.CLICK_RIGHT, true);
                 }
             }
@@ -271,10 +271,10 @@ public class MovementAscend extends Movement {
 
         int xAxis = Math.abs(src.getX() - dest.getX()); // either 0 or 1
         int zAxis = Math.abs(src.getZ() - dest.getZ()); // either 0 or 1
-        double flatDistToNext = xAxis * Math.abs((dest.getX() + 0.5D) - ctx.entity().getX()) + zAxis * Math.abs((dest.getZ() + 0.5D) - ctx.entity().getZ());
-        double sideDist = zAxis * Math.abs((dest.getX() + 0.5D) - ctx.entity().getX()) + xAxis * Math.abs((dest.getZ() + 0.5D) - ctx.entity().getZ());
+        double flatDistToNext = xAxis * Math.abs((dest.getX() + 0.5D) - ctx.player().getX()) + zAxis * Math.abs((dest.getZ() + 0.5D) - ctx.player().getZ());
+        double sideDist = zAxis * Math.abs((dest.getX() + 0.5D) - ctx.player().getX()) + xAxis * Math.abs((dest.getZ() + 0.5D) - ctx.player().getZ());
 
-        double lateralMotion = xAxis * ctx.entity().getVelocity().z + zAxis * ctx.entity().getVelocity().x;
+        double lateralMotion = xAxis * ctx.player().getVelocity().z + zAxis * ctx.player().getVelocity().x;
         if (Math.abs(lateralMotion) > 0.1) {
             return state;
         }
@@ -295,7 +295,7 @@ public class MovementAscend extends Movement {
 
     private boolean canStopJumping() {
         BetterBlockPos srcUp = src.up();
-        double entityY = ctx.entity().getY();
+        double entityY = ctx.player().getY();
         if (entityY < srcUp.y) {
             return false;
         } else if (entityY <= srcUp.y + 0.1) {
@@ -306,7 +306,7 @@ public class MovementAscend extends Movement {
 
     // TODO handle wider entities
     public boolean headBonkClear() {
-        BetterBlockPos startUp = src.up(MathHelper.ceil(ctx.entity().getHeight()));
+        BetterBlockPos startUp = src.up(MathHelper.ceil(ctx.player().getHeight()));
         for (int i = 0; i < 4; i++) {
             BetterBlockPos check = startUp.offset(Direction.fromHorizontal(i));
             if (!MovementHelper.canWalkThrough(ctx, check)) {

@@ -24,7 +24,7 @@ import baritone.api.command.exception.CommandException;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.utils.BetterBlockPos;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.block.AirBlock;
 import net.minecraft.server.command.ServerCommandSource;
 
@@ -40,7 +40,7 @@ public class SurfaceCommand extends Command {
 
     @Override
     public void execute(ServerCommandSource source, String label, IArgConsumer args, IBaritone baritone) throws CommandException {
-        IEntityContext ctx = baritone.getPlayerContext();
+        IPlayerContext ctx = baritone.getPlayerContext();
         final BetterBlockPos playerPos = ctx.feetPos();
         final int surfaceLevel = ctx.world().getSeaLevel();
         final int worldHeight = ctx.world().getHeight();

@@ -27,7 +27,7 @@ import baritone.api.pathing.movement.IMovement;
 import baritone.api.pathing.movement.MovementStatus;
 import baritone.api.pathing.path.IPathExecutor;
 import baritone.api.utils.BetterBlockPos;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.api.utils.RotationUtils;
 import baritone.api.utils.VecUtils;
 import baritone.api.utils.input.Input;
@@ -79,7 +79,7 @@ public class PathExecutor implements IPathExecutor {
     private HashSet<BlockPos> toWalkInto = new HashSet<>();
 
     private final PathingBehavior behavior;
-    private final IEntityContext ctx;
+    private final IPlayerContext ctx;
 
     private boolean sprintNextTick;
 
@@ -236,7 +236,7 @@ public class PathExecutor implements IPathExecutor {
             onTick();
             return true;
         } else {
-            ctx.entity().setSprinting(shouldSprintNextTick());
+            ctx.player().setSprinting(shouldSprintNextTick());
             ticksOnCurrent++;
             if (ticksOnCurrent > currentMovementOriginalCostEstimate + baritone.settings().movementTimeoutTicks.get()) {
                 // only cancel if the total time has exceeded the initial estimate
@@ -256,7 +256,7 @@ public class PathExecutor implements IPathExecutor {
         BlockPos bestPos = null;
         for (IMovement movement : path.movements()) {
             for (BlockPos pos : ((Movement) movement).getValidPositions()) {
-                double dist = VecUtils.entityDistanceToCenter(ctx.entity(), pos);
+                double dist = VecUtils.entityDistanceToCenter(ctx.player(), pos);
                 if (dist < best || best == -1) {
                     best = dist;
                     bestPos = pos;
@@ -271,7 +271,7 @@ public class PathExecutor implements IPathExecutor {
         if (!current.isPresent()) {
             return false;
         }
-        if (!ctx.entity().isOnGround()) {
+        if (!ctx.player().isOnGround()) {
             return false;
         }
         if (!MovementHelper.canWalkOn(ctx, ctx.feetPos().down())) {
@@ -305,7 +305,7 @@ public class PathExecutor implements IPathExecutor {
             // when we're midair in the middle of a fall, we're very far from both the beginning and the end, but we aren't actually off path
             if (path.movements().get(pathPosition) instanceof MovementFall) {
                 BlockPos fallDest = path.positions().get(pathPosition + 1); // .get(pathPosition) is the block we fell off of
-                return VecUtils.entityFlatDistanceToCenter(ctx.entity(), fallDest) >= leniency; // ignore Y by using flat distance
+                return VecUtils.entityFlatDistanceToCenter(ctx.player(), fallDest) >= leniency; // ignore Y by using flat distance
             } else {
                 return true;
             }
@@ -320,12 +320,12 @@ public class PathExecutor implements IPathExecutor {
      * @return Whether or not it was possible to snap to the current player feet
      */
     public boolean snipsnapifpossible() {
-        if (!ctx.entity().isOnGround() && ctx.world().getFluidState(ctx.feetPos()).isEmpty()) {
+        if (!ctx.player().isOnGround() && ctx.world().getFluidState(ctx.feetPos()).isEmpty()) {
             // if we're falling in the air, and not in water, don't splice
             return false;
         } else {
             // we are either onGround or in liquid
-            if (ctx.entity().getVelocity().y < -0.1) {
+            if (ctx.player().getVelocity().y < -0.1) {
                 // if we are strictly moving downwards (not stationary)
                 // we could be falling through water, which could be unsafe to splice
                 return false; // so don't
@@ -370,7 +370,7 @@ public class PathExecutor implements IPathExecutor {
         }
 
         // Diagonal movements can sprint underwater on their own, but we may need to cancel the swimming pose to get air
-        if (current instanceof MovementDiagonal && ctx.entity().isSubmergedInWater() && ctx.world().getBlockState(ctx.feetPos().up()).getFluidState().isEmpty()) {
+        if (current instanceof MovementDiagonal && ctx.player().isSubmergedInWater() && ctx.world().getBlockState(ctx.feetPos().up()).getFluidState().isEmpty()) {
             return false;
         }
 
@@ -416,7 +416,7 @@ public class PathExecutor implements IPathExecutor {
                 // playerFeet adds 0.1251 to account for soul sand
                 // farmland is 0.9375
                 // 0.07 is to account for farmland
-                if (ctx.entity().getY() >= center.getY() - 0.07) {
+                if (ctx.player().getY() >= center.getY() - 0.07) {
                     behavior.baritone.getInputOverrideHandler().setInputForceState(Input.JUMP, false);
                     return true;
                 }
@@ -424,13 +424,13 @@ public class PathExecutor implements IPathExecutor {
             if (pathPosition < path.length() - 2 && prev instanceof MovementTraverse && sprintableAscend(ctx, (MovementTraverse) prev, (MovementAscend) current, path.movements().get(pathPosition + 1))) {
                 return true;
             }
-            if (pathPosition < path.length() - 1 && (prev.getDirection().getX() != 0 || prev.getDirection().getZ() != 0) && ctx.entity().isSubmergedInWater()) {
+            if (pathPosition < path.length() - 1 && (prev.getDirection().getX() != 0 || prev.getDirection().getZ() != 0) && ctx.player().isSubmergedInWater()) {
                 return true;
             }
         }
         // also traverse does not sprint by itself underwater
         if (current instanceof MovementTraverse
-                && ctx.entity().isSubmergedInWater()
+                && ctx.player().isSubmergedInWater()
                 && pathPosition != 0) {
             IMovement prev = path.movements().get(pathPosition - 1);
             return (prev.getDirection().getX() != 0 || prev.getDirection().getZ() != 0)
@@ -451,7 +451,7 @@ public class PathExecutor implements IPathExecutor {
                     return true;
                 }
                 clearKeys();
-                behavior.baritone.getLookBehavior().updateTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), data.getLeft(), ctx.entityRotations()), false);
+                behavior.baritone.getLookBehavior().updateTarget(RotationUtils.calcRotationFromVec3d(ctx.playerHead(), data.getLeft(), ctx.playerRotations()), false);
                 behavior.baritone.getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, true);
                 return true;
             }
@@ -498,8 +498,8 @@ public class PathExecutor implements IPathExecutor {
                 movement.getDest().add(flatDir.getX() * (i - pathPosition), 0, flatDir.getZ() * (i - pathPosition)));
     }
 
-    private static boolean skipNow(IEntityContext ctx, IMovement current) {
-        double offTarget = Math.abs(current.getDirection().getX() * (current.getSrc().z + 0.5D - ctx.entity().getZ())) + Math.abs(current.getDirection().getZ() * (current.getSrc().x + 0.5D - ctx.entity().getX()));
+    private static boolean skipNow(IPlayerContext ctx, IMovement current) {
+        double offTarget = Math.abs(current.getDirection().getX() * (current.getSrc().z + 0.5D - ctx.player().getZ())) + Math.abs(current.getDirection().getZ() * (current.getSrc().x + 0.5D - ctx.player().getX()));
         if (offTarget > 0.1) {
             return false;
         }
@@ -509,11 +509,11 @@ public class PathExecutor implements IPathExecutor {
             return true;
         }
         // wait 0.3
-        double flatDist = Math.abs(current.getDirection().getX() * (headBonk.getX() + 0.5D - ctx.entity().getX())) + Math.abs(current.getDirection().getZ() * (headBonk.getZ() + 0.5 - ctx.entity().getZ()));
+        double flatDist = Math.abs(current.getDirection().getX() * (headBonk.getX() + 0.5D - ctx.player().getX())) + Math.abs(current.getDirection().getZ() * (headBonk.getZ() + 0.5 - ctx.player().getZ()));
         return flatDist > 0.8;
     }
 
-    private static boolean sprintableAscend(IEntityContext ctx, MovementTraverse current, MovementAscend next, IMovement nextnext) {
+    private static boolean sprintableAscend(IPlayerContext ctx, MovementTraverse current, MovementAscend next, IMovement nextnext) {
         if (!current.getDirection().equals(next.getDirection().down())) {
             return false;
         }
@@ -550,7 +550,7 @@ public class PathExecutor implements IPathExecutor {
         return !MovementHelper.avoidWalkingInto(ctx.world().getBlockState(next.getDest().up(2))); // codacy smh my head
     }
 
-    private static boolean canSprintFromDescendInto(IEntityContext ctx, IMovement current, IMovement next, Settings settings) {
+    private static boolean canSprintFromDescendInto(IPlayerContext ctx, IMovement current, IMovement next, Settings settings) {
         if (next instanceof MovementDescend && next.getDirection().equals(current.getDirection())) {
             return true;
         }

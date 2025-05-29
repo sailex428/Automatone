@@ -19,7 +19,7 @@ package baritone.behavior;
 
 import baritone.Baritone;
 import baritone.api.behavior.IBehavior;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 
 /**
  * A type of game event listener that is given {@link Baritone} instance context.
@@ -30,7 +30,7 @@ import baritone.api.utils.IEntityContext;
 public class Behavior implements IBehavior {
 
     public final Baritone baritone;
-    public final IEntityContext ctx;
+    public final IPlayerContext ctx;
 
     protected Behavior(Baritone baritone) {
         this.baritone = baritone;

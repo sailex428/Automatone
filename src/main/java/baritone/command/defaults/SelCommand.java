@@ -73,12 +73,12 @@ public class SelCommand extends Command {
         if (action == null) {
             throw new CommandInvalidTypeException(args.consumed(), "an action");
         }
-        ISelectionManager manager = ISelectionManager.KEY.get(baritone.getPlayerContext().entity());
+        ISelectionManager manager = ISelectionManager.KEY.get(baritone.getPlayerContext().player());
         if (action == Action.POS1 || action == Action.POS2) {
             if (action == Action.POS2 && pos1 == null) {
                 throw new CommandInvalidStateException("Set pos1 first before using pos2");
             }
-            LivingEntity entity = baritone.getPlayerContext().entity();
+            LivingEntity entity = baritone.getPlayerContext().player();
             BetterBlockPos playerPos = entity instanceof ServerPlayerEntity && ((ServerPlayerEntity) entity).getCameraEntity() != null ? BetterBlockPos.from(((ServerPlayerEntity) entity).getCameraEntity().getBlockPos()) : baritone.getPlayerContext().feetPos();
             BetterBlockPos pos = args.hasAny() ? args.getDatatypePost(RelativeBlockPos.INSTANCE, playerPos) : playerPos;
             args.requireMax(0);

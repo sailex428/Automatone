@@ -19,14 +19,14 @@ package baritone.utils;
 
 import baritone.Baritone;
 import baritone.api.process.IBaritoneProcess;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 public abstract class BaritoneProcessHelper implements IBaritoneProcess {
 
     protected final Baritone baritone;
-    protected final IEntityContext ctx;
+    protected final IPlayerContext ctx;
 
     public BaritoneProcessHelper(Baritone baritone) {
         this.baritone = baritone;

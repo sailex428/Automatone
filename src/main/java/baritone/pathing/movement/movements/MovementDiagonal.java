@@ -71,7 +71,7 @@ public class MovementDiagonal extends Movement {
     }
 
     private MovementDiagonal(IBaritone baritone, BetterBlockPos start, BetterBlockPos end, BetterBlockPos dir1, BetterBlockPos dir2) {
-        super(baritone, start, end, computeBlocksToBreak(baritone.getPlayerContext().entity(), end, dir1, dir2));
+        super(baritone, start, end, computeBlocksToBreak(baritone.getPlayerContext().player(), end, dir1, dir2));
     }
 
     @NotNull
@@ -86,7 +86,7 @@ public class MovementDiagonal extends Movement {
     protected boolean safeToCancel(MovementState state) {
         //too simple. backfill does not work after cornering with this
         //return MovementHelper.canWalkOn(ctx, ctx.playerFeet().down());
-        LivingEntity player = ctx.entity();
+        LivingEntity player = ctx.player();
         double offset = 0.25;
         double x = player.getX();
         double y = player.getY() - 1;
@@ -299,7 +299,7 @@ public class MovementDiagonal extends Movement {
         } else if (!playerInValidPosition() && !(MovementHelper.isLiquid(ctx, src) && getValidPositions().contains(ctx.feetPos().up()))) {
             return state.setStatus(MovementStatus.UNREACHABLE);
         }
-        if (dest.y > src.y && ctx.entity().getY() < src.y + 0.1 && ctx.entity().horizontalCollision) {
+        if (dest.y > src.y && ctx.player().getY() < src.y + 0.1 && ctx.player().horizontalCollision) {
             state.setInput(Input.JUMP, true);
         }
         if (sprint()) {

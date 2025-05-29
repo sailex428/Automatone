@@ -17,7 +17,7 @@
 
 package baritone.utils;
 
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -32,16 +32,16 @@ import java.util.Objects;
  */
 public final class BlockBreakHelper {
 
-    private final IEntityContext ctx;
+    private final IPlayerContext ctx;
     private @Nullable BlockPos lastPos;
 
-    BlockBreakHelper(IEntityContext ctx) {
+    BlockBreakHelper(IPlayerContext ctx) {
         this.ctx = ctx;
     }
 
     public void stopBreakingBlock() {
         // The player controller will never be null, but the player can be
-        if (ctx.entity() != null && lastPos != null) {
+        if (ctx.player() != null && lastPos != null) {
             if (!ctx.playerController().hasBrokenBlock()) {
                 // insane bypass to check breaking succeeded
                 ctx.playerController().setHittingBlock(true);
@@ -59,12 +59,12 @@ public final class BlockBreakHelper {
             BlockPos pos = ((BlockHitResult) trace).getBlockPos();
             if (!Objects.equals(lastPos, pos)) {
                 ctx.playerController().clickBlock(pos, ((BlockHitResult) trace).getSide());
-                ctx.entity().swingHand(Hand.MAIN_HAND);
+                ctx.player().swingHand(Hand.MAIN_HAND);
             }
 
             // Attempt to break the block
             if (ctx.playerController().onPlayerDamageBlock(pos, ((BlockHitResult) trace).getSide())) {
-                ctx.entity().swingHand(Hand.MAIN_HAND);
+                ctx.player().swingHand(Hand.MAIN_HAND);
             }
 
             ctx.playerController().setHittingBlock(false);

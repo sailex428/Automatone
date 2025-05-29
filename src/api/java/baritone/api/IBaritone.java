@@ -24,7 +24,7 @@ import baritone.api.command.manager.ICommandManager;
 import baritone.api.event.listener.IEventBus;
 import baritone.api.pathing.calc.IPathingControlManager;
 import baritone.api.process.*;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import baritone.api.utils.IInputOverrideHandler;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -122,10 +122,10 @@ public interface IBaritone extends ServerTickingComponent {
     IInputOverrideHandler getInputOverrideHandler();
 
     /**
-     * @return The {@link IEntityContext} instance
-     * @see IEntityContext
+     * @return The {@link IPlayerContext} instance
+     * @see IPlayerContext
      */
-    IEntityContext getPlayerContext();
+    IPlayerContext getPlayerContext();
 
     /**
      * @return The {@link IEventBus} instance
@@ -152,8 +152,8 @@ public interface IBaritone extends ServerTickingComponent {
      * @param components The components to send
      */
     default void logDirect(Text... components) {
-        IEntityContext playerContext = this.getPlayerContext();
-        LivingEntity entity = playerContext.entity();
+        IPlayerContext playerContext = this.getPlayerContext();
+        LivingEntity entity = playerContext.player();
         if (entity instanceof PlayerEntity) {
             MutableText component = Text.literal("");
             // If we are not logging as a Toast

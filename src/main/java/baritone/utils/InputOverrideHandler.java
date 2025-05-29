@@ -87,7 +87,7 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
     public final synchronized void clearAllKeys() {
         // Note that calling setSprinting before entity attributes are initialized will crash the game
         // PERF: entity flags use a lock, see if we can put this elsewhere to reduce the number of calls
-        if (this.ctx.entity().isSprinting()) this.ctx.entity().setSprinting(false);
+        if (this.ctx.player().isSprinting()) this.ctx.player().setSprinting(false);
         this.inputForceStateMap.clear();
         this.needsUpdate = true;
     }
@@ -100,7 +100,7 @@ public final class InputOverrideHandler extends Behavior implements IInputOverri
             setInputForceState(Input.CLICK_RIGHT, false);
         }
 
-        ServerPlayerEntity entity = this.ctx.entity();
+        ServerPlayerEntity entity = this.ctx.player();
 
         Vec3d currentVelocity = entity.getVelocity();
         entity.setSneaking(false);

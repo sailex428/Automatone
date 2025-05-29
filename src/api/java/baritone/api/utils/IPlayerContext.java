@@ -46,12 +46,12 @@ import java.util.stream.StreamSupport;
  * @author Brady
  * @since 11/12/2018
  */
-public interface IEntityContext {
+public interface IPlayerContext {
 
-    ServerPlayerEntity entity();
+    ServerPlayerEntity player();
 
     default IBaritone baritone() {
-        return IBaritone.KEY.get(entity());
+        return IBaritone.KEY.get(player());
     }
 
     @Nullable PlayerInventory inventory();
@@ -79,15 +79,15 @@ public interface IEntityContext {
     BetterBlockPos feetPos();
 
     default Vec3d feetPosAsVec() {
-        return new Vec3d(entity().getX(), entity().getY(), entity().getZ());
+        return new Vec3d(player().getX(), player().getY(), player().getZ());
     }
 
-    default Vec3d headPos() {
-        return new Vec3d(entity().getX(), entity().getY() + entity().getStandingEyeHeight(), entity().getZ());
+    default Vec3d playerHead() {
+        return new Vec3d(player().getX(), player().getY() + player().getStandingEyeHeight(), player().getZ());
     }
 
-    default Rotation entityRotations() {
-        return new Rotation(entity().getYaw(), entity().getPitch());
+    default Rotation playerRotations() {
+        return new Rotation(player().getYaw(), player().getPitch());
     }
 
     /**
@@ -111,7 +111,7 @@ public interface IEntityContext {
         if (!BaritoneAPI.getGlobalSettings().chatDebug.get()) {
             return;
         }
-        LivingEntity entity = entity();
+        LivingEntity entity = player();
         if (entity instanceof PlayerEntity) ((PlayerEntity) entity).sendMessage(Text.literal(message).formatted(Formatting.GRAY), false);
 
         if (!BaritoneAPI.getGlobalSettings().syncWithOps.get()) return;

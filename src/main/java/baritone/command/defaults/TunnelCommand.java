@@ -23,7 +23,7 @@ import baritone.api.command.argument.IArgConsumer;
 import baritone.api.command.exception.CommandException;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalStrictDirection;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -41,7 +41,7 @@ public class TunnelCommand extends Command {
     @Override
     public void execute(ServerCommandSource source, String label, IArgConsumer args, IBaritone baritone) throws CommandException {
         args.requireMax(3);
-        IEntityContext ctx = baritone.getPlayerContext();
+        IPlayerContext ctx = baritone.getPlayerContext();
 
         if (args.hasExactly(3)) {
             boolean cont = true;
@@ -59,7 +59,7 @@ public class TunnelCommand extends Command {
                 width--;
                 BlockPos corner1;
                 BlockPos corner2;
-                Direction enumFacing = ctx.entity().getHorizontalFacing();
+                Direction enumFacing = ctx.player().getHorizontalFacing();
                 int addition = ((width % 2 == 0) ? 0 : 1);
                 switch (enumFacing) {
                     case EAST:
@@ -87,7 +87,7 @@ public class TunnelCommand extends Command {
         } else {
             Goal goal = new GoalStrictDirection(
                     ctx.feetPos(),
-                    ctx.entity().getHorizontalFacing()
+                    ctx.player().getHorizontalFacing()
             );
             baritone.getCustomGoalProcess().setGoalAndPath(goal);
             logDirect(source, String.format("Goal: %s", goal.toString()));

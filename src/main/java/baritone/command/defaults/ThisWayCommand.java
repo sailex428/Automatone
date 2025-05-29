@@ -22,7 +22,7 @@ import baritone.api.command.Command;
 import baritone.api.command.argument.IArgConsumer;
 import baritone.api.command.exception.CommandException;
 import baritone.api.pathing.goals.GoalXZ;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.server.command.ServerCommandSource;
 
 import java.util.Arrays;
@@ -38,10 +38,10 @@ public class ThisWayCommand extends Command {
     @Override
     public void execute(ServerCommandSource source, String label, IArgConsumer args, IBaritone baritone) throws CommandException {
         args.requireExactly(1);
-        IEntityContext ctx = baritone.getPlayerContext();
+        IPlayerContext ctx = baritone.getPlayerContext();
         GoalXZ goal = GoalXZ.fromDirection(
                 ctx.feetPosAsVec(),
-                ctx.entity().headYaw,
+                ctx.player().headYaw,
                 args.getAs(Double.class)
         );
         baritone.getCustomGoalProcess().setGoal(goal);

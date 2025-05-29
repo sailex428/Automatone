@@ -262,12 +262,12 @@ public class MovementParkour extends Movement {
                 // but i did it anyway
                 return state.setStatus(MovementStatus.SUCCESS);
             }
-            if (ctx.entity().getVelocity().normalize().dotProduct(ctx.entity().getRotationVector()) > 0.5) {
+            if (ctx.player().getVelocity().normalize().dotProduct(ctx.player().getRotationVector()) > 0.5) {
                 // if still moving forward, backpedal to cancel momentum
                 state.setInput(Input.MOVE_BACK, true);
             }
             /* lilypads */
-            if (ctx.entity().getY() - ctx.feetPos().getY() < 0.094) {
+            if (ctx.player().getY() - ctx.feetPos().getY() < 0.094) {
                 state.setStatus(MovementStatus.SUCCESS);
             }
         } else {
@@ -276,15 +276,15 @@ public class MovementParkour extends Movement {
                 state.setInput(Input.SPRINT, true);
             }
             if (!ctx.feetPos().equals(src)) {
-                if (ctx.feetPos().equals(src.offset(direction)) || ctx.entity().getY() - src.y > 0.0001) {
-                    if (!MovementHelper.canWalkOn(ctx, dest.down()) && !ctx.entity().isOnGround() && MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), true, false) == PlaceResult.READY_TO_PLACE) {
+                if (ctx.feetPos().equals(src.offset(direction)) || ctx.player().getY() - src.y > 0.0001) {
+                    if (!MovementHelper.canWalkOn(ctx, dest.down()) && !ctx.player().isOnGround() && MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), true, false) == PlaceResult.READY_TO_PLACE) {
                         // go in the opposite order to check DOWN before all horizontals -- down is preferable because you don't have to look to the side while in midair, which could mess up the trajectory
                         state.setInput(Input.CLICK_RIGHT, true);
                     }
                     // prevent jumping too late by checking for ascend
                     if (dist == 3 && !ascend) { // this is a 2 block gap, dest = src + direction * 3
-                        double xDiff = (src.x + 0.5) - ctx.entity().getX();
-                        double zDiff = (src.z + 0.5) - ctx.entity().getZ();
+                        double xDiff = (src.x + 0.5) - ctx.player().getX();
+                        double zDiff = (src.z + 0.5) - ctx.player().getZ();
                         double distFromStart = Math.max(Math.abs(xDiff), Math.abs(zDiff));
                         if (distFromStart < 0.7) {
                             return state;

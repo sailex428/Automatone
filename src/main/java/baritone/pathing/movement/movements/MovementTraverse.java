@@ -65,7 +65,7 @@ public class MovementTraverse extends Movement {
     private boolean wasTheBridgeBlockAlwaysThere = true;
 
     public MovementTraverse(IBaritone baritone, BetterBlockPos from, BetterBlockPos to) {
-        super(baritone, from, to, buildPositionsToBreak(baritone.getPlayerContext().entity(), from, to), to.down());
+        super(baritone, from, to, buildPositionsToBreak(baritone.getPlayerContext().player(), from, to), to.down());
     }
 
     @Override
@@ -293,7 +293,7 @@ public class MovementTraverse extends Movement {
             }
 
             // and we aren't already pressed up against the block
-            double dist = Math.max(Math.abs(ctx.entity().getX() - (dest.getX() + 0.5D)), Math.abs(ctx.entity().getZ() - (dest.getZ() + 0.5D)));
+            double dist = Math.max(Math.abs(ctx.player().getX() - (dest.getX() + 0.5D)), Math.abs(ctx.player().getZ() - (dest.getZ() + 0.5D)));
             if (dist < 0.83) {
                 return state;
             }
@@ -303,7 +303,7 @@ public class MovementTraverse extends Movement {
                 return state;
             }
 
-            EntityDimensions dims = ctx.entity().getDimensions(ctx.entity().getPose());
+            EntityDimensions dims = ctx.player().getDimensions(ctx.player().getPose());
             if (dims.width() > 1 || dims.height() < 1 || dims.height() > 2) { // player-sized entities get the optimized path, others stop and break blocks
                 return state;
             }
@@ -313,7 +313,7 @@ public class MovementTraverse extends Movement {
 
             // combine the yaw to the center of the destination, and the pitch to the specific block we're trying to break
             // it's safe to do this since the two blocks we break (in a traverse) are right on top of each other and so will have the same yaw
-            yawToDest = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(ctx.world(), dest), ctx.entityRotations()).getYaw();
+            yawToDest = RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.calculateBlockCenter(ctx.world(), dest), ctx.playerRotations()).getYaw();
             pitchToBreak = state.getTarget().getRotation().get().getPitch();
             if ((MovementHelper.isBlockNormalCube(bss[0]) || bss[0].getBlock() instanceof AirBlock && (MovementHelper.isBlockNormalCube(bss[1]) || bss[1].getBlock() instanceof AirBlock))) {
                 // in the meantime, before we're right up against the block, we can break efficiently at this angle
@@ -348,7 +348,7 @@ public class MovementTraverse extends Movement {
         BlockPos standingOnPos = feet.down();
         BlockState standingOn = BlockStateInterface.get(ctx, standingOnPos);
         // A bit of random for slightly more natural look
-        if (MovementHelper.isWater(standingOn) && ctx.entity().getY() < src.getY() + Math.random() * 0.2) {
+        if (MovementHelper.isWater(standingOn) && ctx.player().getY() < src.getY() + Math.random() * 0.2) {
             state.setInput(Input.JUMP, true);
         } else if (feet.getY() != dest.getY() && !ladder) {
             baritone.logDebug("Wrong Y coordinate");
@@ -369,7 +369,7 @@ public class MovementTraverse extends Movement {
             BlockState lowBs = BlockStateInterface.get(ctx, src);
             Block low = lowBs.getBlock();
             Block high = BlockStateInterface.get(ctx, src.up()).getBlock();
-            if (ctx.entity().getY() > src.y + 0.1D && !ctx.entity().isOnGround() && (low == Blocks.VINE || low == Blocks.LADDER || high == Blocks.VINE || high == Blocks.LADDER)) {
+            if (ctx.player().getY() > src.y + 0.1D && !ctx.player().isOnGround() && (low == Blocks.VINE || low == Blocks.LADDER || high == Blocks.VINE || high == Blocks.LADDER)) {
                 // hitting W could cause us to climb the ladder instead of going forward
                 if (!MovementHelper.isLiquid(lowBs)) {
                     // wait until we're on the ground
@@ -404,21 +404,21 @@ public class MovementTraverse extends Movement {
             wasTheBridgeBlockAlwaysThere = false;
 //            VoxelShape collisionShape = standingOn.getCollisionShape(ctx.world(), standingOnPos);
             if ((standingOn.getBlock().equals(Blocks.SOUL_SAND) && !AltoClefSettings.getInstance().shouldTreatSoulSandAsOrdinaryBlock()) || standingOn.getBlock() instanceof SlabBlock) {  // see issue #118
-                double dist = Math.max(Math.abs(dest.getX() + 0.5 - ctx.entity().getX()), Math.abs(dest.getZ() + 0.5 - ctx.entity().getZ()));
+                double dist = Math.max(Math.abs(dest.getX() + 0.5 - ctx.player().getX()), Math.abs(dest.getZ() + 0.5 - ctx.player().getZ()));
                 if (dist < 0.85) { // 0.5 + 0.3 + epsilon
                     MovementHelper.moveTowards(ctx, state, dest);
                     return state.setInput(Input.MOVE_FORWARD, false)
                             .setInput(Input.MOVE_BACK, true);
                 }
             }
-            double dist1 = Math.max(Math.abs(ctx.entity().getX() - (dest.getX() + 0.5D)), Math.abs(ctx.entity().getZ() - (dest.getZ() + 0.5D)));
+            double dist1 = Math.max(Math.abs(ctx.player().getX() - (dest.getX() + 0.5D)), Math.abs(ctx.player().getZ() - (dest.getZ() + 0.5D)));
             PlaceResult p = MovementHelper.attemptToPlaceABlock(state, baritone, dest.down(), false, true);
             if ((p == PlaceResult.READY_TO_PLACE || dist1 < 0.6) && !baritone.settings().assumeSafeWalk.get()) {
                 state.setInput(Input.SNEAK, true);
             }
             switch (p) {
                 case READY_TO_PLACE -> {
-                    if (ctx.entity().isSneaking() || baritone.settings().assumeSafeWalk.get()) {
+                    if (ctx.player().isSneaking() || baritone.settings().assumeSafeWalk.get()) {
                         state.setInput(Input.CLICK_RIGHT, true);
                     }
                     return state;
@@ -426,12 +426,12 @@ public class MovementTraverse extends Movement {
                 case ATTEMPTING -> {
                     if (dist1 > 0.83) {
                         // might need to go forward a bit
-                        float yaw = RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.getBlockPosCenter(dest), ctx.entityRotations()).getYaw();
+                        float yaw = RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.getBlockPosCenter(dest), ctx.playerRotations()).getYaw();
                         if (Math.abs(state.getTarget().rotation.getYaw() - yaw) < 0.1) {
                             // but only if our attempted place is straight ahead
                             return state.setInput(Input.MOVE_FORWARD, true);
                         }
-                    } else if (ctx.entityRotations().isReallyCloseTo(state.getTarget().rotation)) {
+                    } else if (ctx.playerRotations().isReallyCloseTo(state.getTarget().rotation)) {
                         // well i guess theres something in the way
                         return state.setInput(Input.CLICK_LEFT, true);
                     }
@@ -449,11 +449,11 @@ public class MovementTraverse extends Movement {
                 // faceX, faceY, faceZ is the middle of the face between from and to
                 BlockPos goalLook = src.down(); // this is the block we were just standing on, and the one we want to place against
 
-                Rotation backToFace = RotationUtils.calcRotationFromVec3d(ctx.headPos(), new Vec3d(faceX, faceY, faceZ), ctx.entityRotations());
+                Rotation backToFace = RotationUtils.calcRotationFromVec3d(ctx.playerHead(), new Vec3d(faceX, faceY, faceZ), ctx.playerRotations());
                 float pitch = backToFace.getPitch();
-                double dist2 = Math.max(Math.abs(ctx.entity().getX() - faceX), Math.abs(ctx.entity().getZ() - faceZ));
+                double dist2 = Math.max(Math.abs(ctx.player().getX() - faceX), Math.abs(ctx.player().getZ() - faceZ));
                 if (dist2 < 0.29) { // see issue #208
-                    float yaw = RotationUtils.calcRotationFromVec3d(VecUtils.getBlockPosCenter(dest), ctx.headPos(), ctx.entityRotations()).getYaw();
+                    float yaw = RotationUtils.calcRotationFromVec3d(VecUtils.getBlockPosCenter(dest), ctx.playerHead(), ctx.playerRotations()).getYaw();
                     state.setTarget(new MovementState.MovementTarget(new Rotation(yaw, pitch), true));
                     state.setInput(Input.MOVE_BACK, true);
                 } else {
@@ -463,7 +463,7 @@ public class MovementTraverse extends Movement {
                     return state.setInput(Input.CLICK_RIGHT, true); // wait to right click until we are able to place
                 }
                 // Out.log("Trying to look at " + goalLook + ", actually looking at" + Baritone.whatAreYouLookingAt());
-                if (ctx.entityRotations().isReallyCloseTo(state.getTarget().rotation)) {
+                if (ctx.playerRotations().isReallyCloseTo(state.getTarget().rotation)) {
                     state.setInput(Input.CLICK_LEFT, true);
                 }
                 return state;
@@ -481,7 +481,7 @@ public class MovementTraverse extends Movement {
             boolean canOpen = DoorBlock.canOpenByHand(bs);
 
             if (notPassable && canOpen) {
-                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.headPos(), VecUtils.calculateBlockCenter(ctx.world(), dest.up()), ctx.entityRotations()), true))
+                state.setTarget(new MovementState.MovementTarget(RotationUtils.calcRotationFromVec3d(ctx.playerHead(), VecUtils.calculateBlockCenter(ctx.world(), dest.up()), ctx.playerRotations()), true))
                         .setInput(Input.CLICK_RIGHT, true);
                 return true;
             }

@@ -91,7 +91,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
         }
 
         assert actualTarget != null;
-        LivingEntity entity = this.ctx.entity();
+        LivingEntity entity = this.ctx.player();
         double lookScrambleFactor = baritone.settings().randomLooking.get();
         updateLook(entity, actualTarget, lookScrambleFactor, !baritone.settings().freeLook.get());
     }
@@ -112,7 +112,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
     private Rotation getActualTarget(@Nullable Rotation primaryTarget, @Nullable Rotation secondaryTarget) {
         if (baritone.settings().freeLook.get()) {
             // free look is enabled, do not touch the rotations but make sure we move correctly
-            updateControlsToMatch(this.baritone.getInputOverrideHandler(), primaryTarget, this.ctx.entity().getYaw());
+            updateControlsToMatch(this.baritone.getInputOverrideHandler(), primaryTarget, this.ctx.player().getYaw());
             return null;
         } else if (secondaryTarget != null) {
             // we have a secondary target, use it to set the rotations but still make sure we move correctly
@@ -125,7 +125,7 @@ public final class LookBehavior extends Behavior implements ILookBehavior {
 
     public void pig() {
         if (this.target != null) {
-            this.ctx.entity().setYaw(this.target.getYaw());
+            this.ctx.player().setYaw(this.target.getYaw());
         }
     }
 

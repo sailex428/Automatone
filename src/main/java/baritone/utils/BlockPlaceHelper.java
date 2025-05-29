@@ -18,7 +18,7 @@
 package baritone.utils;
 
 import baritone.api.BaritoneAPI;
-import baritone.api.utils.IEntityContext;
+import baritone.api.utils.IPlayerContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.ActionResult;
@@ -28,10 +28,10 @@ import net.minecraft.util.hit.HitResult;
 
 public class BlockPlaceHelper {
 
-    private final IEntityContext ctx;
+    private final IPlayerContext ctx;
     private int rightClickTimer;
 
-    BlockPlaceHelper(IEntityContext playerContext) {
+    BlockPlaceHelper(IPlayerContext playerContext) {
         this.ctx = playerContext;
     }
 
@@ -41,13 +41,13 @@ public class BlockPlaceHelper {
             return;
         }
         HitResult mouseOver = ctx.objectMouseOver();
-        boolean isRowingBoat = ctx.entity().getVehicle() != null && ctx.entity().getVehicle() instanceof BoatEntity;
-        if (!rightClickRequested  || !(ctx.entity() instanceof PlayerEntity) || isRowingBoat || mouseOver == null || mouseOver.getType() != HitResult.Type.BLOCK) {
+        boolean isRowingBoat = ctx.player().getVehicle() != null && ctx.player().getVehicle() instanceof BoatEntity;
+        if (!rightClickRequested  || !(ctx.player() instanceof PlayerEntity) || isRowingBoat || mouseOver == null || mouseOver.getType() != HitResult.Type.BLOCK) {
             return;
         }
 
         rightClickTimer = BaritoneAPI.getGlobalSettings().rightClickSpeed.get();
-        PlayerEntity player = (PlayerEntity) ctx.entity();
+        PlayerEntity player = (PlayerEntity) ctx.player();
 
         for (Hand hand : Hand.values()) {
             ActionResult actionResult = ctx.playerController().processRightClickBlock(player, ctx.world(), hand, (BlockHitResult) mouseOver);

@@ -56,7 +56,7 @@ public class MovementDownward extends Movement {
     private int numTicks = 0;
 
     public MovementDownward(IBaritone baritone, BetterBlockPos start, BetterBlockPos end) {
-        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().entity(), end));
+        super(baritone, start, end, buildPositionsToBreak(baritone.getPlayerContext().player(), end));
     }
 
     public static BetterBlockPos[] buildPositionsToBreak(Entity entity, BetterBlockPos end) {
@@ -166,15 +166,15 @@ public class MovementDownward extends Movement {
             return state.setStatus(MovementStatus.UNREACHABLE);
         }
 
-        double diffX = ctx.entity().getX() - (dest.getX() + 0.5);
-        double diffZ = ctx.entity().getZ() - (dest.getZ() + 0.5);
+        double diffX = ctx.player().getX() - (dest.getX() + 0.5);
+        double diffZ = ctx.player().getZ() - (dest.getZ() + 0.5);
         double ab = Math.sqrt(diffX * diffX + diffZ * diffZ);
 
         if (numTicks++ < 10 && ab < 0.2) {
             if (((Baritone) this.baritone).bsi.get0(this.baritone.getPlayerContext().feetPos().down()).isOf(Blocks.SCAFFOLDING)) {
                 // Sneak to go down scaffolding
                 state.setInput(Input.SNEAK, true);
-            } else if (ctx.entity().isSubmergedInWater()) {
+            } else if (ctx.player().isSubmergedInWater()) {
                 state.setInput(Input.SNEAK, true);  // go down faster in full water
             }
             return state;
