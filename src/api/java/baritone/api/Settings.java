@@ -201,6 +201,8 @@ public final class Settings {
             // Leave Empty by Default
     ));
 
+    public final Setting<List<Block>> blocksToDisallowBreaking = new Setting<>(new ArrayList<>());
+
 
     /**
      * blocks that baritone shouldn't break, but can if it needs to.
